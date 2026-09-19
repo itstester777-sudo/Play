@@ -1,780 +1,833 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>S.T.A.L.K.E.R. 2D: Bunker Extraction Extended Edition</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Courier New', monospace; }
-  body { background: #030503; color: #d0ffd0; overflow: hidden; width: 100vw; height: 100vh; }
-  canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
-  
-  #ui-layer {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 15px;
-  }
-  .hud-panel {
-    background: rgba(10, 18, 12, 0.9); border: 2px solid #2e5a36; border-radius: 6px;
-    padding: 10px 14px; pointer-events: auto; font-weight: bold; font-size: 13px; text-shadow: 1px 1px #000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-  }
-  .progress-container { width: 140px; height: 12px; background: #0c140e; border: 1px solid #3a6b43; border-radius: 3px; margin-top: 4px; overflow: hidden; }
-  .progress-fill { height: 100%; transition: width 0.2s ease; }
-  #hp-bar { background: linear-gradient(90deg, #b32d2d, #e74c3c); }
-  #filter-bar { background: linear-gradient(90deg, #2d89b3, #3498db); }
-  #stamina-bar { background: linear-gradient(90deg, #b39b2d, #f1c40f); }
-
-  .action-btn {
-    position: absolute; bottom: 25%; right: 12%; padding: 16px 26px; font-size: 16px;
-    background: #1e4a27; color: #fff; border: 2px solid #4cd137; border-radius: 8px;
-    cursor: pointer; font-weight: bold; display: none; pointer-events: auto;
-    box-shadow: 0 0 15px rgba(76,209,55,0.4); text-transform: uppercase;
-  }
-  .action-btn:active { background: #4cd137; color: #000; }
-
-  #joystick-base {
-    position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px;
-    border: 2px dashed rgba(76,209,55,0.4); border-radius: 50%; pointer-events: auto; touch-action: none;
-  }
-  #joystick-knob {
-    position: absolute; top: 35px; left: 35px; width: 50px; height: 50px;
-    background: rgba(76,209,55,0.6); border: 2px solid #4cd137; border-radius: 50%;
-  }
-
-  #fire-btn {
-    position: absolute; bottom: 40px; right: 30px; width: 85px; height: 85px;
-    background: rgba(189, 45, 45, 0.5); border: 2px solid #e74c3c; border-radius: 50%;
-    pointer-events: auto; display: flex; align-items: center; justify-content: center;
-    font-weight: bold; font-size: 14px; color: #fff; touch-action: none;
-  }
-  #fire-btn:active { background: rgba(231, 76, 60, 0.9); }
-
-  .modal-window {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: #0a140d; border: 2px solid #4cd137; width: 92%; max-width: 420px;
-    padding: 20px; display: none; pointer-events: auto; z-index: 100; border-radius: 8px;
-    max-height: 85vh; overflow-y: auto; box-shadow: 0 0 30px rgba(0,0,0,0.9);
-  }
-  .modal-window h2 { color: #4cd137; margin-bottom: 15px; border-bottom: 1px solid #2e5a36; padding-bottom: 5px; }
-  .item-row { display: flex; justify-content: space-between; align-items: center; background: #132417; padding: 8px 12px; margin: 6px 0; border: 1px solid #2e5a36; border-radius: 4px; }
-  .btn-small { background: #2e5a36; color: #fff; border: 1px solid #4cd137; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-  .btn-small:active { background: #4cd137; color: #000; }
-  .close-btn { width: 100%; margin-top: 15px; background: #822222; border-color: #e74c3c; }
-
-  #notification {
-    position: absolute; top: 12%; width: 100%; text-align: center; font-size: 20px;
-    font-weight: bold; color: #a3ffa3; text-shadow: 0 0 10px #000; opacity: 0; transition: opacity 0.6s ease; pointer-events: none;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Пиксель-арт квест</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0b0c10;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:monospace;touch-action:none;overflow:hidden;user-select:none;-webkit-user-select:none}
+    .game-container{background:#181c16;padding:8px;border-radius:18px;display:flex;flex-direction:column;align-items:center;position:relative;border:2px solid #2d3828;width:100%;max-width:800px;box-shadow:0 10px 35px rgba(0,0,0,0.7)}
+    
+    .canvas-wrapper{position:relative;width:100%;border-radius:6px;overflow:hidden}
+    canvas{display:block;border-radius:6px;image-rendering:pixelated;background:#000;width:100%;aspect-ratio:4/3;touch-action:none}
+    
+    .menu-btn{position:absolute;top:12px;right:12px;z-index:20;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:bold;color:#f0e6c5;width:50px;height:50px;border:2px solid rgba(224,203,160,0.6);border-radius:10px;background:rgba(50,45,35,0.9);font-size:11px}
+    .menu-modal{position:absolute;top:68px;right:12px;background:rgba(35,30,22,0.95);border:2px solid rgba(224,203,160,0.6);border-radius:12px;display:none;flex-direction:column;padding:8px;z-index:35;gap:6px;max-height:350px;overflow-y:auto}
+    .menu-modal.show{display:flex}
+    .menu-item{padding:6px 10px;color:#f0e6c5;font-weight:bold;font-size:10px;background:rgba(65,58,45,0.8);border:1px solid rgba(188,155,107,0.4);border-radius:8px;cursor:pointer;text-align:center;white-space:nowrap}
+    
+    .enter-btn,.sleep-btn,.merchant-btn{position:absolute;left:50%;transform:translateX(-50%);padding:8px 20px;border-radius:20px;font-weight:bold;font-size:13px;cursor:pointer;opacity:0;pointer-events:none;z-index:20;transition:opacity .2s}
+    .enter-btn{bottom:20px;border:2px solid rgba(224,203,160,0.7);background:rgba(55,50,40,0.92);color:#f0e6c5}
+    .merchant-btn{bottom:20px;border:2px solid rgba(241,196,15,0.8);background:rgba(90,70,20,0.92);color:#f1c40f;box-shadow:0 0 10px rgba(241,196,15,0.3)}
+    .sleep-btn{bottom:70px;border:2px solid rgba(150,180,255,0.8);background:rgba(30,50,95,0.92);color:#e0edff;box-shadow:0 0 10px rgba(100,150,255,0.4)}
+    .enter-btn.show,.sleep-btn.show,.merchant-btn.show,.toast.show{opacity:1;pointer-events:auto}
+    
+    .controls-zone{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:8px;padding:6px 12px;background:#10130e;border:1px solid rgba(188,155,107,0.25);border-radius:14px;touch-action:none}
+    .action-group{display:flex;gap:12px;align-items:center}
+    
+    .attack-btn,.dash-btn{position:relative;width:62px;height:62px;border-radius:50%;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:bold;color:#fff;font-size:11px;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+    .attack-btn{border:3px solid rgba(255,80,80,0.8);background:rgba(180,40,40,0.85)}
+    .dash-btn{border:3px solid rgba(100,200,255,0.8);background:rgba(30,100,180,0.85)}
+    .cd-overlay{position:absolute;bottom:0;left:0;width:100%;height:0%;background:rgba(0,0,0,0.65);pointer-events:none;transition:height 0.05s linear}
+    
+    .joystick-zone{position:relative;width:95px;height:95px;border-radius:50%;background:rgba(35,30,25,0.6);border:2px solid rgba(240,230,210,0.4);display:flex;justify-content:center;align-items:center;touch-action:none}
+    .joystick-base{width:55px;height:55px;border-radius:50%;background:rgba(80,60,40,0.6);border:2px solid rgba(224,203,160,0.5);display:flex;justify-content:center;align-items:center;pointer-events:none}
+    .joystick-thumb{width:28px;height:28px;border-radius:50%;background:#f5e7c8;border:2px solid #222;pointer-events:none}
+    
+    .hud{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:6px;color:#f0e6c5;font-weight:bold;font-size:11px;z-index:25;gap:6px}
+    .hp-box{display:flex;align-items:center;gap:6px;background:rgba(35,30,22,0.85);padding:4px 8px;border-radius:12px;border:1px solid rgba(255,80,80,0.6);}
+    .hp-bar{width:60px;height:8px;background:#222;border-radius:4px;overflow:hidden;}
+    #hpFill{width:100%;height:100%;background:#e74c3c;transition:width 0.2s;}
+    #hpText{color:#ff6b6b;font-size:10px;font-weight:bold;}
+    
+    .coord-box,.quest-status{background:rgba(35,30,22,0.85);padding:4px 8px;border-radius:12px;border:1px solid rgba(188,155,107,0.4)}
+    .toast{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:rgba(35,30,22,0.95);border:2px solid rgba(224,203,160,0.8);padding:6px 14px;border-radius:20px;color:#f0e6c5;font-weight:bold;font-size:13px;pointer-events:none;opacity:0;transition:opacity .2s;z-index:40;white-space:nowrap}
+    
+    .bag-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:10px;color:#f0e6c5;padding:4px}
+  </style>
 </head>
 <body>
-
-<canvas id="gameCanvas"></canvas>
-
-<div id="ui-layer">
-  <div style="display: flex; justify-content: space-between;">
-    <div class="hud-panel">
-      ЗДОРОВЬЕ <span id="hp-txt">100/100</span>
-      <div class="progress-container"><div id="hp-bar" class="progress-fill" style="width: 100%;"></div></div>
-      ФИЛЬТР <span id="filter-txt">100/100</span>
-      <div class="progress-container"><div id="filter-bar" class="progress-fill" style="width: 100%;"></div></div>
-      ВЫНОСЛИВОСТЬ
-      <div class="progress-container"><div id="stamina-bar" class="progress-fill" style="width: 100%;"></div></div>
+<div class="game-container">
+  <div class="canvas-wrapper">
+    <div class="toast" id="t"></div>
+    <canvas id="c" width="800" height="600"></canvas>
+    <button class="menu-btn" id="menuToggle">📜<br><span style="font-size:9px">МЕНЮ</span></button>
+    
+    <!-- Главное меню -->
+    <div class="menu-modal" id="menuModal">
+      <div class="menu-item" id="btnBag">🎒 Рюкзак</div>
+      <div class="menu-item" id="btnQuests">⚔️ Квесты</div>
+      <div class="menu-item" id="btnCraft">🛠️ Крафт</div>
+      <div class="menu-item" id="btnSave" style="border-color:#2ecc71;color:#2ecc71">💾 Сохранить</div>
     </div>
-    <div class="hud-panel" style="text-align: right;">
-      <div style="color: #f1c40f; font-size: 15px; margin-bottom: 4px;">РУБЛИ: <span id="money-txt">500</span> ₽</div>
-      <div id="mask-info" style="color: #78e08f; font-size: 11px;">Маска: ГП-5</div>
-      <div id="loc-info" style="color: #82ccdd; font-size: 11px;">Локация: Периметр</div>
-      <div style="color: #aaa; font-size: 11px; margin-top: 4px;">Патроны: <span id="ammo-txt">30</span></div>
+    
+    <!-- Окно Рюкзака -->
+    <div class="menu-modal" id="bagModal" style="width: 220px;">
+      <div style="color:#f0e6c5;font-size:11px;text-align:center;font-weight:bold;margin-bottom:4px">ИНВЕНТАРЬ</div>
+      <div class="bag-grid">
+        <div>🪵 Дерево: <span id="bWood">0</span></div>
+        <div>🪨 Камень: <span id="bStone">0</span></div>
+        <div>⛓️ Железо: <span id="bIron">0</span></div>
+        <div>🟡 Золото: <span id="bGold">0</span></div>
+        <div>💎 Алмазы: <span id="bDiam">0</span></div>
+        <div>🦴 Кости: <span id="bBones">0</span></div>
+        <div>🦊 Кожа: <span id="bLeather">0</span></div>
+        <div>✨ Эссенция: <span id="bEssence">0</span></div>
+      </div>
+      <div style="color:#a6a6a6;font-size:9px;text-align:center;margin-top:4px;">Броня: ур. <span id="bArmor">0</span> | Зелья: <span id="bPots">0</span></div>
+    </div>
+    
+    <!-- Окно Торговца -->
+    <div class="menu-modal" id="merchantModal" style="width: 230px;">
+      <div style="color:#f1c40f;font-size:11px;text-align:center;font-weight:bold;margin-bottom:4px">🧙‍♂️ ТОРГОВЕЦ БРАУН</div>
+      <div style="font-size:9px;color:#d4d0c0;text-align:center;margin-bottom:6px;">«Приветствую, путник! Чего желаешь?»</div>
+      <div class="menu-item" id="mBuyPotion">🧪 Зелье здоровья (10 зол.)</div>
+      <div class="menu-item" id="mSellStone">🪨 Продать Камень x3 (2 зол.)</div>
+      <div class="menu-item" id="mSellIron">⛓️ Продать Железо x2 (4 зол.)</div>
+    </div>
+    
+    <!-- Меню Крафта -->
+    <div class="menu-modal" id="craftModal" style="width: 210px;">
+      <div style="color:#f0e6c5;font-size:11px;text-align:center;font-weight:bold;margin-bottom:2px">ОРУЖИЕ</div>
+      <div class="menu-item" id="c1">🪵 Дерев. меч (3 дер)</div>
+      <div class="menu-item" id="c2">🪨 Камен. меч (3 кам)</div>
+      <div class="menu-item" id="c3">⛓️ Желез. меч (3 жел)</div>
+      <div class="menu-item" id="c4">🟡 Золотой меч (3 зол)</div>
+      <div class="menu-item" id="c5">💎 Алмаз. меч (3 алм)</div>
+      
+      <div style="color:#f0e6c5;font-size:11px;text-align:center;font-weight:bold;margin:6px 0 2px">БРОНЯ И ЩИТЫ</div>
+      <div class="menu-item" id="c_arm_iron">🛡️ Железный нагрудник (5 жел)</div>
+      <div class="menu-item" id="c_arm_gold">👑 Золотой шлем (4 зол)</div>
+      <div class="menu-item" id="c_arm_diam">💎 Алмазный щит (4 алм, 2 кост)</div>
+
+      <div style="color:#f0e6c5;font-size:11px;text-align:center;font-weight:bold;margin:6px 0 2px">ИНСТРУМЕНТЫ</div>
+      <div class="menu-item" id="c_pick_iron">⛏️ Железная кирка (3 жел, 2 дер)</div>
+      <div class="menu-item" id="c_pick_diam">⚒️ Алмазная кирка (3 алм, 3 жел)</div>
+
+      <div style="color:#f0e6c5;font-size:11px;text-align:center;font-weight:bold;margin:6px 0 2px">РАСХОДНИКИ</div>
+      <div class="menu-item" id="c_potion">🧪 Зелье силы (2 кожи, 1 эссенц)</div>
+      <div class="menu-item" id="c_torch">🔥 Факел х2 (1 дер, 1 кость)</div>
+    </div>
+
+    <button class="sleep-btn" id="sleepBtn">😴 СПАТЬ</button>
+    <button class="enter-btn" id="e">🚪 ВОЙТИ</button>
+    <button class="merchant-btn" id="merchantBtn">🤝 ТОРГОВАТЬ</button>
+  </div>
+
+  <div class="controls-zone">
+    <div class="action-group">
+      <button class="attack-btn" id="attack">⚔️<br><span style="font-size:9px">АТАКА</span></button>
+      <button class="dash-btn" id="dash">💨<br><span style="font-size:9px">РЫВОК</span><div class="cd-overlay" id="dashCd"></div></button>
+    </div>
+    <div class="joystick-zone" id="jz">
+      <div class="joystick-base"><div class="joystick-thumb" id="jt"></div></div>
     </div>
   </div>
-  <div class="hud-panel" id="inventory-bar" style="align-self: center; display: flex; gap: 8px;"></div>
-</div>
 
-<button id="action-btn" class="action-btn">ДЕЙСТВИЕ</button>
-<div id="joystick-base"><div id="joystick-knob"></div></div>
-<div id="fire-btn">ОГОНЬ</div>
-<div id="notification"></div>
-
-<div id="shop-modal" class="modal-window">
-  <h2>ТОРГОВЕЦ СИДОРОВИЧ</h2>
-  <div id="shop-list"></div>
-  <button class="btn-small close-btn" onclick="closeModals()">ЗАКРЫТЬ</button>
-</div>
-
-<div id="base-modal" class="modal-window">
-  <h2>УБЕЖИЩЕ И ВЕРСТАК</h2>
-  <div id="base-list"></div>
-  <button class="btn-small close-btn" onclick="closeModals()">ЗАКРЫТЬ</button>
+  <div class="hud">
+    <div class="hp-box">
+      ❤️<div class="hp-bar"><div id="hpFill"></div></div>
+      <span id="hpText">100/100</span>
+    </div>
+    <span class="quest-status">🟡 Золото: <span id="hudGold">0</span> | Зелья: <span id="hudPotions">0</span> | Квест: <span id="questState">🔍</span></span>
+  </div>
 </div>
 
 <script>
-const $ = id => document.getElementById(id);
-const canvas = $('gameCanvas');
-const ctx = canvas.getContext('2d');
+(function() {
+  var C = document.getElementById('c'), X = C.getContext('2d');
+  X.imageSmoothingEnabled = false;
 
-let W, H;
-function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-resize();
-
-// Звуковой движок на Web Audio API
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-function playSound(type) {
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  let osc = audioCtx.createOscillator();
-  let gain = audioCtx.createGain();
-  let now = audioCtx.currentTime;
-  osc.connect(gain); gain.connect(audioCtx.destination);
-
-  if (type === 'step') {
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(80, now);
-    osc.frequency.exponentialRampToValueAtTime(30, now + 0.08);
-    gain.gain.setValueAtTime(0.08, now);
-    gain.gain.linearRampToValueAtTime(0, now + 0.08);
-    osc.start(now); osc.stop(now + 0.08);
-  } else if (type === 'shot') {
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(300, now);
-    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
-    gain.gain.setValueAtTime(0.2, now);
-    gain.gain.linearRampToValueAtTime(0, now + 0.15);
-    osc.start(now); osc.stop(now + 0.15);
-  } else if (type === 'hit') {
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(120, now);
-    osc.frequency.linearRampToValueAtTime(40, now + 0.2);
-    gain.gain.setValueAtTime(0.25, now);
-    gain.gain.linearRampToValueAtTime(0, now + 0.2);
-    osc.start(now); osc.stop(now + 0.2);
-  } else if (type === 'item') {
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(400, now);
-    osc.frequency.setValueAtTime(800, now + 0.1);
-    gain.gain.setValueAtTime(0.15, now);
-    gain.gain.linearRampToValueAtTime(0, now + 0.25);
-    osc.start(now); osc.stop(now + 0.25);
+  var audioCtx = null;
+  function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === 'suspended') audioCtx.resume(); }
+  function tone(type, f1, f2, dur, vol, delay) {
+    if (!audioCtx) return;
+    var t = audioCtx.currentTime + (delay || 0), o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f1, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(vol || 0.1, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + dur);
   }
-}
+  var SFX = {
+    step: function() { tone('sine', 140, 60, 0.05, 0.08); },
+    hit: function() { tone('triangle', 200, 80, 0.1, 0.15); },
+    pickup: function() { [523, 659, 783].forEach(function(f, i) { tone('sine', f, 0, 0.2, 0.08, i * 0.06); }); },
+    win: function() { [587, 739, 880, 1174].forEach(function(f, i) { tone('sine', f, 0, 0.4, 0.1, i * 0.08); }); },
+    sleep: function() { [261, 329, 392, 523].forEach(function(f, i) { tone('sine', f, 0, 0.5, 0.08, i * 0.15); }); },
+    dash: function() { tone('sine', 450, 150, 0.15, 0.18); },
+    attack: function() {
+      if (!audioCtx) return;
+      var now = audioCtx.currentTime, b = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.12, audioCtx.sampleRate), d = b.getChannelData(0);
+      for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      var n = audioCtx.createBufferSource(); n.buffer = b;
+      var f = audioCtx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 2.5; f.frequency.setValueAtTime(700, now); f.frequency.exponentialRampToValueAtTime(400, now + 0.12);
+      var g = audioCtx.createGain(); g.gain.setValueAtTime(0.18, now); g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      n.connect(f); f.connect(g); g.connect(audioCtx.destination); n.start(now); n.stop(now + 0.12);
+    }
+  };
 
-// Константы и конфигурация
-const MAP_SIZE = 4000;
-const CITY = { x: 2000, y: 2000, r: 400 };
+  function cv(w, h, fn) { var c = document.createElement('canvas'); c.width = w; c.height = h; var cx = c.getContext('2d'); cx.imageSmoothingEnabled = false; fn(cx, w, h); return c; }
+  var TEX = {};
+  
+  TEX.grass = cv(128, 128, function(cx, w, h) {
+    cx.fillStyle = '#3a5f28'; cx.fillRect(0, 0, w, h);
+    var s = 777; function r() { s = (s * 9301 + 49297) % 233280; return s / 233280; }
+    for (var i = 0; i < 30; i++) { cx.fillStyle = r() > 0.5 ? '#487232' : '#2d4c1f'; cx.fillRect(Math.floor(r() * (w - 4)), Math.floor(r() * (h - 6)), 2, 4 + Math.floor(r() * 3)); }
+    var fl = ['#ffffff', '#e74c3c', '#3498db', '#f39c12'];
+    for (var j = 0; j < 6; j++) { cx.fillStyle = fl[j % 4]; cx.fillRect(Math.floor(r() * (w - 10)) + 2, Math.floor(r() * (h - 10)) + 2, 3, 3); }
+  });
 
-const MASKS = {
-  gp5: { name: 'ГП-5', maxFilter: 100, vision: 220, price: 0 },
-  pmk: { name: 'ПМК-3', maxFilter: 220, vision: 280, price: 1200 },
-  seva: { name: 'КОСТЮМ СЕВА', maxFilter: 400, vision: 360, price: 4500 }
-};
+  TEX.houseFloor = cv(64, 64, function(cx, w, h) {
+    cx.fillStyle = '#422c17'; cx.fillRect(0, 0, w, h);
+    for (var y = 0; y < h; y += 16) {
+      cx.fillStyle = '#54391e'; cx.fillRect(0, y + 1, w, 14);
+      cx.fillStyle = '#2d1c0c'; cx.fillRect(0, y, w, 1); cx.fillRect(0, y + 15, w, 1);
+    }
+    cx.fillStyle = '#2d1c0c';
+    cx.fillRect(24, 0, 2, 16); cx.fillRect(56, 16, 2, 16); cx.fillRect(16, 32, 2, 16); cx.fillRect(48, 48, 2, 16);
+  });
 
-const ITEMS = {
-  filter: { name: 'Фильтр', price: 150, sell: 70, type: 'consumable' },
-  medkit: { name: 'Аптечка ИИ-1', price: 250, sell: 120, type: 'consumable' },
-  ammo: { name: 'Патроны 5.45', price: 300, sell: 150, type: 'consumable' },
-  junk: { name: 'Металлолом', sell: 80, type: 'loot' },
-  circuit: { name: 'Микросхема', sell: 350, type: 'loot' },
-  artifact: { name: 'Артефакт "Выверт"', sell: 1200, type: 'loot' }
-};
+  TEX.houseWall = cv(64, 64, function(cx, w, h) {
+    cx.fillStyle = '#22140a'; cx.fillRect(0, 0, w, h);
+    for (var y = 0; y < h; y += 16) {
+      cx.fillStyle = '#382213'; cx.fillRect(0, y, w, 14);
+      cx.fillStyle = '#4a2f1b'; cx.fillRect(0, y, w, 2);
+      cx.fillStyle = '#170c05'; cx.fillRect(0, y + 14, w, 2);
+    }
+  });
 
-let gameState = {
-  location: 'field', // field, city, bunker
-  currentBunker: null,
-  money: 600,
-  bunkerUpgrade: 0,
-  player: {
-    x: CITY.x, y: CITY.y + 150,
-    speed: 3.5, stamina: 100, maxStamina: 100,
-    hp: 100, maxHp: 100,
-    filter: 100, mask: 'gp5',
-    ammo: 60,
-    inventory: [{ id: 'filter', count: 2 }, { id: 'medkit', count: 1 }]
-  }
-};
+  TEX.bed = cv(70, 90, function(cx) {
+    cx.fillStyle = 'rgba(0,0,0,0.45)'; cx.fillRect(4, 10, 62, 76);
+    cx.fillStyle = '#3b2313'; cx.fillRect(6, 6, 58, 80);
+    cx.fillStyle = '#5c3a21'; cx.fillRect(8, 8, 54, 76);
+    cx.fillStyle = '#1e2836'; cx.fillRect(10, 24, 50, 58);
+    cx.fillStyle = '#f2f0e6'; cx.fillRect(14, 14, 42, 18);
+    cx.fillStyle = '#d4d0c0'; cx.fillRect(14, 28, 42, 4);
+    cx.fillStyle = '#2980b9'; cx.fillRect(10, 36, 50, 46);
+    cx.fillStyle = '#3498db'; cx.fillRect(10, 36, 50, 6);
+  });
 
-let bunkers = [
-  { id: 1, name: 'Бункер "Заброшка" (Тир 1)', x: 1200, y: 1400, tier: 1, lootTable: ['junk', 'filter'] },
-  { id: 2, name: 'Бункер "Лаборатория X-18" (Тир 2)', x: 2800, y: 1200, tier: 2, lootTable: ['circuit', 'filter', 'ammo'] },
-  { id: 3, name: 'Бункер "Монолит" (Тир 3)', x: 1000, y: 3100, tier: 3, lootTable: ['artifact', 'circuit', 'ammo'] }
-];
+  TEX.carpet = cv(120, 80, function(cx, w, h) {
+    cx.fillStyle = 'rgba(0,0,0,0.25)'; cx.fillRect(2, 2, w, h);
+    cx.fillStyle = '#6c2529'; cx.fillRect(0, 0, w, h);
+    cx.fillStyle = '#d4ac0d'; cx.fillRect(4, 4, w - 8, h - 8);
+    cx.fillStyle = '#1c2833'; cx.fillRect(8, 8, w - 16, h - 16);
+    cx.fillStyle = '#8e44ad'; cx.fillRect(14, 14, w - 28, h - 28);
+  });
 
-let enemies = [];
-let bullets = [];
-let particles = [];
-let bunkerInterior = { containers: [], enemies: [], exit: { x: 400, y: 550 } };
+  TEX.table = cv(64, 54, function(cx) {
+    cx.fillStyle = 'rgba(0,0,0,0.4)'; cx.fillRect(6, 8, 52, 42);
+    cx.fillStyle = '#4a2f1b'; cx.fillRect(2, 2, 60, 44);
+    cx.fillStyle = '#634026'; cx.fillRect(4, 4, 56, 40);
+    cx.fillStyle = '#311f12'; cx.fillRect(2, 44, 60, 2);
+    cx.fillStyle = '#bdc3c7'; cx.fillRect(12, 12, 8, 10);
+    cx.fillStyle = '#7f8c8d'; cx.fillRect(10, 14, 2, 6);
+    cx.fillStyle = '#f1c40f'; cx.fillRect(42, 22, 10, 4);
+    cx.fillStyle = '#ffffff'; cx.fillRect(45, 12, 4, 10);
+    cx.fillStyle = '#e67e22'; cx.fillRect(46, 6, 2, 6);
+  });
 
-// Спавн врагов в открытом мире
-for (let i = 0; i < 45; i++) {
-  let ex = Math.random() * MAP_SIZE;
-  let ey = Math.random() * MAP_SIZE;
-  if (Math.hypot(ex - CITY.x, ey - CITY.y) > CITY.r + 300) {
-    enemies.push({ x: ex, y: ey, type: Math.random() > 0.4 ? 'mutant' : 'bandit', hp: 50, speed: 1.8, damage: 12, range: 250 });
-  }
-}
+  TEX.monster = cv(80, 40, function(cx) {
+    function drawM(ox, bob) {
+      var yOff = bob ? 1 : 0;
+      cx.fillStyle = 'rgba(0,0,0,0.4)'; cx.beginPath(); cx.ellipse(ox+20, 36, 12, 3.5, 0, 0, Math.PI*2); cx.fill();
+      cx.fillStyle = '#145a32'; cx.fillRect(ox+11, 31, 5, 4); cx.fillRect(ox+24, 31, 5, 4);
+      cx.fillStyle = '#1e8449'; cx.fillRect(ox+8, 12+yOff, 24, 19);
+      cx.fillStyle = '#27ae60'; cx.fillRect(ox+10, 10+yOff, 20, 21);
+      cx.fillStyle = '#52be80'; cx.fillRect(ox+12, 10+yOff, 16, 3);
+      cx.fillStyle = '#114b27'; cx.fillRect(ox+10, 27+yOff, 20, 4);
+      cx.fillStyle = '#1e8449'; cx.fillRect(ox+5, 8+yOff, 5, 6); cx.fillRect(ox+30, 8+yOff, 5, 6);
+      cx.fillStyle = '#a9dfbf'; cx.fillRect(ox+6, 9+yOff, 2, 3); cx.fillRect(ox+32, 9+yOff, 2, 3);
+      cx.fillStyle = '#ffffff'; cx.fillRect(ox+11, 15+yOff, 6, 6); cx.fillRect(ox+23, 15+yOff, 6, 6);
+      cx.fillStyle = '#e74c3c'; cx.fillRect(ox+13, 16+yOff, 4, 4); cx.fillRect(ox+23, 16+yOff, 4, 4);
+      cx.fillStyle = '#000000'; cx.fillRect(ox+15, 17+yOff, 2, 2); cx.fillRect(ox+23, 17+yOff, 2, 2);
+      cx.fillStyle = '#142318'; cx.fillRect(ox+13, 24+yOff, 14, 3);
+      cx.fillStyle = '#ffffff'; cx.fillRect(ox+14, 24+yOff, 2, 2); cx.fillRect(ox+24, 24+yOff, 2, 2);
+    }
+    drawM(0, 0); drawM(40, 1);
+  });
 
-// Управление вводами
-let keys = {};
-window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+  TEX.merchant = cv(40, 40, function(cx) {
+    cx.fillStyle = 'rgba(0,0,0,0.4)'; cx.beginPath(); cx.ellipse(20, 36, 10, 3.5, 0, 0, Math.PI*2); cx.fill();
+    cx.fillStyle = '#7d6608'; cx.fillRect(10, 16, 20, 20);
+    cx.fillStyle = '#f1c40f'; cx.fillRect(12, 14, 16, 18);
+    cx.fillStyle = '#f5cba7'; cx.fillRect(14, 8, 12, 10);
+    cx.fillStyle = '#78281f'; cx.fillRect(12, 4, 16, 6);
+    cx.fillStyle = '#2c3e50'; cx.fillRect(16, 12, 3, 3); cx.fillRect(22, 12, 3, 3);
+  });
 
-let joystick = { active: false, id: null, x: 0, y: 0, dx: 0, dy: 0 };
-const jBase = $('joystick-base');
-const jKnob = $('joystick-knob');
+  TEX.boss = cv(120, 60, function(cx) {
+    function drawB(ox, bob) {
+      var yOff = bob ? 2 : 0;
+      cx.fillStyle = 'rgba(0,0,0,0.5)'; cx.beginPath(); cx.ellipse(ox+30, 54, 22, 5.5, 0, 0, Math.PI*2); cx.fill();
+      cx.fillStyle = '#2c3e50'; cx.fillRect(ox+16, 44, 10, 8); cx.fillRect(ox+34, 44, 10, 8);
+      cx.fillStyle = '#4a235a'; cx.fillRect(ox+12, 18+yOff, 36, 28);
+      cx.fillStyle = '#6c3483'; cx.fillRect(ox+15, 15+yOff, 30, 28);
+      cx.fillStyle = '#a569bd'; cx.fillRect(ox+18, 15+yOff, 24, 4);
+      cx.fillStyle = '#f39c12'; cx.fillRect(ox+6, 16+yOff, 10, 12); cx.fillRect(ox+44, 16+yOff, 10, 12);
+      cx.fillStyle = '#d4ac0d'; cx.fillRect(ox+4, 10+yOff, 6, 8); cx.fillRect(ox+50, 10+yOff, 6, 8);
+      cx.fillStyle = '#f1c40f'; cx.fillRect(ox+18, 36+yOff, 24, 4);
+      cx.fillStyle = '#e74c3c'; cx.fillRect(ox+28, 35+yOff, 4, 6);
+      cx.fillStyle = '#2c3e50'; cx.fillRect(ox+18, 8+yOff, 24, 12);
+      cx.fillStyle = '#ff0055'; cx.fillRect(ox+21, 12+yOff, 6, 4); cx.fillRect(ox+33, 12+yOff, 6, 4);
+      cx.fillStyle = '#ffffff'; cx.fillRect(ox+23, 13+yOff, 2, 2); cx.fillRect(ox+35, 13+yOff, 2, 2);
+      cx.fillStyle = '#f1c40f'; cx.fillRect(ox+18, 4+yOff, 24, 4);
+      cx.fillRect(ox+18, 0+yOff, 4, 4); cx.fillRect(ox+28, -2+yOff, 4, 6); cx.fillRect(ox+38, 0+yOff, 4, 4);
+    }
+    drawB(0, 0); drawB(60, 1);
+  });
 
-jBase.addEventListener('pointerdown', e => {
-  joystick.active = true;
-  joystick.id = e.pointerId;
-  updateJoystick(e);
-});
-window.addEventListener('pointermove', e => {
-  if (joystick.active && e.pointerId === joystick.id) updateJoystick(e);
-});
-window.addEventListener('pointerup', e => {
-  if (joystick.active && e.pointerId === joystick.id) {
-    joystick.active = false;
-    joystick.dx = 0; joystick.dy = 0;
-    jKnob.style.transform = `translate(0px, 0px)`;
-  }
-});
+  TEX.tree = cv(64, 96, function(cx) {
+    cx.fillStyle = 'rgba(0,0,0,0.4)'; cx.beginPath(); cx.ellipse(32, 88, 20, 6, 0, 0, Math.PI*2); cx.fill();
+    cx.fillStyle = '#3d2817'; cx.fillRect(27, 48, 10, 38);
+    [{x:32,y:36,r:26,c:'#142b0e'},{x:32,y:24,r:22,c:'#29521e'},{x:32,y:12,r:12,c:'#488735'}].forEach(function(p){ cx.fillStyle=p.c; cx.beginPath(); cx.arc(p.x,p.y,p.r,0,Math.PI*2); cx.fill(); });
+  });
 
-function updateJoystick(e) {
-  let rect = jBase.getBoundingClientRect();
-  let cx = rect.left + rect.width / 2;
-  let cy = rect.top + rect.height / 2;
-  let dx = e.clientX - cx;
-  let dy = e.clientY - cy;
-  let dist = Math.hypot(dx, dy);
-  let maxDist = 40;
-  if (dist > maxDist) {
-    dx = (dx / dist) * maxDist;
-    dy = (dy / dist) * maxDist;
-  }
-  jKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-  joystick.dx = dx / maxDist;
-  joystick.dy = dy / maxDist;
-}
-
-$('fire-btn').addEventListener('pointerdown', () => {
-  if (gameState.player.ammo > 0 && gameState.location !== 'bunker') { // Стрельба упрощенная
-    gameState.player.ammo--;
-    playSound('shot');
-    // Найти ближайшего врага и нанести урон
-    let p = gameState.player;
-    enemies.forEach(en => {
-      if (Math.hypot(p.x - en.x, p.y - en.y) < 300) {
-        en.hp -= 35;
-        createParticles(en.x, en.y, '#e74c3c', 6);
-      }
+  function makeOre(c, h) {
+    return cv(40, 40, function(cx) {
+      cx.fillStyle = 'rgba(0,0,0,0.4)'; cx.beginPath(); cx.ellipse(20, 34, 13, 4, 0, 0, Math.PI*2); cx.fill();
+      cx.fillStyle = '#4f565d'; cx.fillRect(10, 14, 20, 18);
+      cx.fillStyle = c; cx.fillRect(13, 16, 6, 6); cx.fillRect(21, 21, 6, 6);
+      cx.fillStyle = h; cx.fillRect(14, 17, 2, 2);
     });
   }
-});
+  TEX.stoneOre = makeOre('#888b8d', '#fff'); TEX.ironOre = makeOre('#d1c7bd', '#fff');
+  TEX.goldOre = makeOre('#f1c40f', '#fff5cc'); TEX.diamondOre = makeOre('#00d2d3', '#e0ffff');
 
-function createParticles(x, y, color, count) {
-  for (let i = 0; i < count; i++) {
-    particles.push({
-      x, y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
-      life: 1, color, size: Math.random() * 3 + 2
-    });
-  }
-}
-
-function showNotification(text) {
-  let n = $('notification');
-  n.innerText = text;
-  n.style.opacity = '1';
-  setTimeout(() => n.style.opacity = '0', 2200);
-}
-
-// Главный игровой цикл
-let lastTime = performance.now();
-let stepTimer = 0;
-
-function gameLoop(now) {
-  let dt = Math.min((now - lastTime) / 1000, 0.1);
-  lastTime = now;
-
-  update(dt);
-  render();
-
-  requestAnimationFrame(gameLoop);
-}
-
-function update(dt) {
-  let p = gameState.player;
-  let moveX = 0, moveY = 0;
-
-  if (keys['w'] || keys['ц'] || keys['arrowup']) moveY -= 1;
-  if (keys['s'] || keys['ы'] || keys['arrowdown']) moveY += 1;
-  if (keys['a'] || keys['ф'] || keys['arrowleft']) moveX -= 1;
-  if (keys['d'] || keys['в'] || keys['arrowright']) moveX += 1;
-
-  if (joystick.active) {
-    moveX = joystick.dx;
-    moveY = joystick.dy;
-  }
-
-  let len = Math.hypot(moveX, moveY);
-  if (len > 0) {
-    moveX /= len; moveY /= len;
-    let currentSpeed = p.speed;
-    if (keys['shift'] && p.stamina > 5) {
-      currentSpeed *= 1.6;
-      p.stamina -= dt * 25;
-    } else {
-      if (p.stamina < p.maxStamina) p.stamina += dt * 12;
+  TEX.house = cv(160, 140, function(cx) {
+    cx.fillStyle = 'rgba(0,0,0,0.35)'; cx.fillRect(10, 122, 140, 16);
+    cx.fillStyle = '#4a2f1b'; cx.fillRect(15, 45, 130, 80);
+    for (var y = 45; y < 125; y += 10) {
+      cx.fillStyle = (y / 10) % 2 === 0 ? '#5a3a21' : '#422815';
+      cx.fillRect(15, y, 130, 8);
+      cx.fillStyle = '#28170c'; cx.fillRect(15, y + 8, 130, 2);
     }
-
-    p.x += moveX * currentSpeed;
-    p.y += moveY * currentSpeed;
-
-    stepTimer += dt;
-    if (stepTimer > 0.38) {
-      playSound('step');
-      stepTimer = 0;
+    cx.fillStyle = '#802419'; cx.beginPath(); cx.moveTo(5, 48); cx.lineTo(80, 5); cx.lineTo(155, 48); cx.fill();
+    cx.fillStyle = '#5c1911'; cx.beginPath(); cx.moveTo(5, 48); cx.lineTo(80, 5); cx.lineTo(80, 10); cx.lineTo(12, 52); cx.fill();
+    cx.fillStyle = '#a13023';
+    for (var rx = 20; rx < 140; rx += 16) {
+      for (var ry = 18; ry < 45; ry += 8) { cx.fillRect(rx + (ry%16===0?4:0), ry, 10, 3); }
     }
-  } else {
-    if (p.stamina < p.maxStamina) p.stamina += dt * 18;
-  }
+    cx.fillStyle = '#24150b'; cx.fillRect(28, 63, 32, 32);
+    cx.fillStyle = '#f39c12'; cx.fillRect(30, 65, 28, 28);
+    cx.fillStyle = '#ffeb3b'; cx.fillRect(32, 67, 11, 11); cx.fillRect(45, 67, 11, 11);
+    cx.fillStyle = '#422815'; cx.fillRect(43, 65, 2, 28); cx.fillRect(30, 78, 28, 2);
+    cx.fillStyle = '#24150b'; cx.fillRect(92, 72, 36, 53);
+    cx.fillStyle = '#613b1f'; cx.fillRect(95, 75, 30, 50);
+    cx.fillStyle = '#3d2515'; cx.fillRect(98, 78, 24, 20); cx.fillRect(98, 101, 24, 21);
+    cx.fillStyle = '#f1c40f'; cx.fillRect(98, 98, 4, 4);
+  });
 
-  // Расход фильтра маски
-  let maskObj = MASKS[p.mask];
-  let filterDrain = gameState.location === 'bunker' ? 1.8 : 0.6;
-  p.filter -= dt * filterDrain * (1 - gameState.bunkerUpgrade * 0.1);
-  if (p.filter <= 0) {
-    p.filter = 0;
-    p.hp -= dt * 12;
-    playSound('hit');
-  }
+  TEX.treasure = cv(40, 40, function(cx) {
+    cx.fillStyle = 'rgba(0,0,0,0.4)'; cx.beginPath(); cx.ellipse(20, 32, 13, 4, 0, 0, Math.PI*2); cx.fill();
+    cx.fillStyle = '#784212'; cx.fillRect(8, 14, 24, 16); cx.fillStyle = '#d4af37'; cx.fillRect(8, 22, 24, 2); cx.fillRect(18, 18, 4, 8);
+  });
 
-  if (p.hp <= 0) {
-    alert('ВЫ ПОГИБЛИ В ЗОНЕ ОТЧУЖДЕНИЯ!');
-    p.hp = p.maxHp; p.filter = maskObj.maxFilter;
-    p.x = CITY.x; p.y = CITY.y;
-    gameState.location = 'city';
-    p.inventory = p.inventory.filter(i => ITEMS[i.id].type === 'consumable');
-  }
+  var T = document.getElementById('t'), E = document.getElementById('e'), sleepBtn = document.getElementById('sleepBtn'), merchantBtn = document.getElementById('merchantBtn');
+  var hpFill = document.getElementById('hpFill'), hpText = document.getElementById('hpText');
+  var hudGold = document.getElementById('hudGold'), hudPotions = document.getElementById('hudPotions'), questSpan = document.getElementById('questState');
+  var menuToggle = document.getElementById('menuToggle'), menuModal = document.getElementById('menuModal'), craftModal = document.getElementById('craftModal'), bagModal = document.getElementById('bagModal'), merchantModal = document.getElementById('merchantModal');
+  var dashCdElem = document.getElementById('dashCd');
 
-  // Смена локаций Периметр <-> Город
-  let distCity = Math.hypot(p.x - CITY.x, p.y - CITY.y);
-  if (gameState.location !== 'bunker') {
-    if (distCity < CITY.r) {
-      if (gameState.location !== 'city') {
-        gameState.location = 'city';
-        showNotification('Вы вошли в Бамбуровку (Город)');
+  var W = 1800, H = 1400;
+  var p = { 
+    x: 600, y: 450, speed: 4.5, inHouse: false, hx: 400, hy: 450, houseIdx: 1, isMoving: false, attackAnim: 0,
+    dashTimer: 0, dashCd: 0, dashMaxCd: 120, lastDir: { x: 1, y: 0 },
+    armorLevel: 0, pickaxeLevel: 1, bonusDmg: 0, hp: 100, maxHp: 100
+  };
+  var inv = { wood: 0, stone: 0, iron: 0, gold: 10, diamond: 0, bones: 0, leather: 0, essence: 0, potions: 1 };
+  var questActive = false, questDone = false, questType = 1, monsterKills = 0, weaponDmg = 1;
+  var weapons = { wood: 5, stone: 12, iron: 25, gold: 40, diamond: 70 };
+  var weaponColors = { 1:'#8c5a2b', 5:'#8c5a2b', 12:'#a6a6a6', 25:'#e0c097', 40:'#f1c40f', 70:'#00d2d3' };
+  var stepTimer = 0;
+
+  var merchantNpc = { x: 1250, y: 920 };
+
+  // Сохранение и Загрузка
+  function saveGame() {
+    var data = { p: p, inv: inv, weaponDmg: weaponDmg, questActive: questActive, questDone: questDone, questType: questType, monsterKills: monsterKills };
+    localStorage.setItem('pixel_quest_save', JSON.stringify(data));
+    toast('💾 Игра сохранена!');
+  }
+  function loadGame() {
+    var saved = localStorage.getItem('pixel_quest_save');
+    if (saved) {
+      try {
+        var data = JSON.parse(saved);
+        p = data.p; inv = data.inv; weaponDmg = data.weaponDmg;
+        questActive = data.questActive; questDone = data.questDone; questType = data.questType; monsterKills = data.monsterKills;
+        updateInv(); updateHP();
+        toast('📂 Прогресс загружен!');
+      } catch (e) { console.error(e); }
+    }
+  }
+  loadGame();
+  setInterval(saveGame, 30000); // Автосохранение каждые 30 сек
+
+  var particles = [];
+  function spawnParticles(wx, wy, color, count) {
+    for (var i = 0; i < count; i++) {
+      particles.push({ x: wx, y: wy, vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.5) * 5 - 2, size: Math.floor(Math.random() * 3) + 2, color: color, life: 20, maxLife: 20, type: 'pixel' });
+    }
+  }
+  function spawnDamageText(wx, wy, text, color) {
+    particles.push({ x: wx + (Math.random() - 0.5) * 10, y: wy - 15, vy: -1.2, text: text, color: color || '#ff4d4d', life: 30, maxLife: 30, type: 'text' });
+  }
+  function updateAndDrawParticles() {
+    for (var i = particles.length - 1; i >= 0; i--) {
+      var pt = particles[i]; if (--pt.life <= 0) { particles.splice(i, 1); continue; }
+      var sx = pt.x - p.x + 400, sy = pt.y - p.y + 300, alpha = pt.life / pt.maxLife;
+      if (pt.type === 'pixel') {
+        pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.25;
+        X.fillStyle = pt.color; X.globalAlpha = alpha; X.fillRect(Math.floor(sx), Math.floor(sy), pt.size, pt.size);
+      } else {
+        pt.y += pt.vy; X.fillStyle = pt.color; X.font = 'bold 13px monospace'; X.globalAlpha = alpha; X.fillText(pt.text, Math.floor(sx - 12), Math.floor(sy));
       }
-    } else {
-      if (gameState.location !== 'field') {
-        gameState.location = 'field';
-        showNotification('Вы вышли в радиоактивный Периметр');
-      }
+      X.globalAlpha = 1.0;
     }
   }
 
-  // Обновление врагов в поле
-  if (gameState.location === 'field') {
-    enemies.forEach(en => {
-      let d = Math.hypot(p.x - en.x, p.y - en.y);
-      if (d < en.range) {
-        en.x += (p.x - en.x) / d * en.speed;
-        en.y += (p.y - en.y) / d * en.speed;
-        if (d < 25) {
-          p.hp -= en.damage * dt;
-          playSound('hit');
-          createParticles(p.x, p.y, '#b32d2d', 2);
+  function toast(msg) { T.textContent = msg; T.classList.add('show'); clearTimeout(T._h); T._h = setTimeout(function() { T.classList.remove('show'); }, 2000); }
+  
+  function updateInv() { 
+    hudGold.textContent = inv.gold;
+    hudPotions.textContent = inv.potions;
+    
+    document.getElementById('bWood').textContent = inv.wood;
+    document.getElementById('bStone').textContent = inv.stone;
+    document.getElementById('bIron').textContent = inv.iron;
+    document.getElementById('bGold').textContent = inv.gold;
+    document.getElementById('bDiam').textContent = inv.diamond;
+    document.getElementById('bBones').textContent = inv.bones;
+    document.getElementById('bLeather').textContent = inv.leather;
+    document.getElementById('bEssence').textContent = inv.essence;
+    document.getElementById('bArmor').textContent = p.armorLevel;
+    document.getElementById('bPots').textContent = inv.potions;
+  }
+  
+  function updateHP() {
+    hpFill.style.width = Math.max(0, (p.hp / p.maxHp) * 100) + '%';
+    hpText.textContent = p.hp + '/' + p.maxHp;
+  }
+  function die() {
+    SFX.hit(); toast('💀 ВЫ ПОГИБЛИ! Потеряна половина золота.');
+    inv.gold = Math.floor(inv.gold / 2); updateInv();
+    p.hp = p.maxHp; updateHP();
+    p.inHouse = true; p.hx = 400; p.hy = 430; p.houseIdx = 1;
+    saveGame();
+  }
+
+  function craftWeapon(mat, count, type, name) {
+    craftModal.classList.remove('show'); initAudio();
+    if (inv[mat] >= count) { inv[mat] -= count; updateInv(); weaponDmg = weapons[type]; SFX.win(); toast('🛠️ Скрафчен ' + name + '! Урон: ' + weaponDmg); saveGame(); }
+    else { SFX.hit(); toast('💸 Нужно ' + count + ' (' + mat + ')!'); }
+  }
+  function craftArmor(costs, level, name) {
+    craftModal.classList.remove('show'); initAudio();
+    var ok = true;
+    for (var m in costs) { if (inv[m] < costs[m]) ok = false; }
+    if (ok) {
+      for (var m in costs) inv[m] -= costs[m];
+      p.armorLevel = level; updateInv(); SFX.win(); toast('🛡️ Создано: ' + name); saveGame();
+    } else { SFX.hit(); toast('💸 Не хватает ресурсов для крафта!'); }
+  }
+  function craftPickaxe(costs, level, name) {
+    craftModal.classList.remove('show'); initAudio();
+    var ok = true;
+    for (var m in costs) { if (inv[m] < costs[m]) ok = false; }
+    if (ok) {
+      for (var m in costs) inv[m] -= costs[m];
+      p.pickaxeLevel = level; updateInv(); SFX.win(); toast('⛏️ Улучшение: ' + name); saveGame();
+    } else { SFX.hit(); toast('💸 Не хватает ресурсов!'); }
+  }
+  function craftConsumable(costs, effectName, action) {
+    craftModal.classList.remove('show'); initAudio();
+    var ok = true;
+    for (var m in costs) { if (inv[m] < costs[m]) ok = false; }
+    if (ok) {
+      for (var m in costs) inv[m] -= costs[m];
+      action(); updateInv(); SFX.win(); toast('🧪 Скрафчено: ' + effectName); saveGame();
+    } else { SFX.hit(); toast('💸 Не хватает компонентов!'); }
+  }
+
+  document.getElementById('c1').onclick = function() { craftWeapon('wood', 3, 'wood', 'Деревянный меч'); };
+  document.getElementById('c2').onclick = function() { craftWeapon('stone', 3, 'stone', 'Каменный меч'); };
+  document.getElementById('c3').onclick = function() { craftWeapon('iron', 3, 'iron', 'Железный меч'); };
+  document.getElementById('c4').onclick = function() { craftWeapon('gold', 3, 'gold', 'Золотой меч'); };
+  document.getElementById('c5').onclick = function() { craftWeapon('diamond', 3, 'diamond', 'Алмазный меч'); };
+  document.getElementById('c_arm_iron').onclick = function() { craftArmor({iron: 5}, 1, 'Железный нагрудник'); };
+  document.getElementById('c_arm_gold').onclick = function() { craftArmor({gold: 4}, 2, 'Золотой шлем'); };
+  document.getElementById('c_arm_diam').onclick = function() { craftArmor({diamond: 4, bones: 2}, 3, 'Алмазный щит'); };
+  document.getElementById('c_pick_iron').onclick = function() { craftPickaxe({iron: 3, wood: 2}, 2, 'Железная кирка (+урон руде)'); };
+  document.getElementById('c_pick_diam').onclick = function() { craftPickaxe({diamond: 3, iron: 3}, 3, 'Алмазная кирка (мастер)'); };
+  document.getElementById('c_potion').onclick = function() { craftConsumable({wood: 1, bones: 1}, 'Зелье силы', function() { p.bonusDmg += 5; toast('💪 Сила увеличена!'); }); };
+  document.getElementById('c_torch').onclick = function() { craftConsumable({wood: 1, bones: 1}, 'Факелы x2', function() { inv.gold += 2; toast('🔥 Факелы проданы за 2 золота!'); }); };
+
+  document.getElementById('mBuyPotion').onclick = function() {
+    if (inv.gold >= 10) { inv.gold -= 10; inv.potions += 1; updateInv(); SFX.win(); toast('🧪 Куплено зелье!'); saveGame(); }
+    else toast('💸 Не хватает золота (нужно 10)');
+  };
+  document.getElementById('mSellStone').onclick = function() {
+    if (inv.stone >= 3) { inv.stone -= 3; inv.gold += 2; updateInv(); SFX.win(); toast('💰 Продано 3 камня!'); saveGame(); }
+    else toast('💸 Нужно 3 камня');
+  };
+  document.getElementById('mSellIron').onclick = function() {
+    if (inv.iron >= 2) { inv.iron -= 2; inv.gold += 4; updateInv(); SFX.win(); toast('💰 Продано 2 железа!'); saveGame(); }
+    else toast('💸 Нужно 2 железа');
+  };
+
+  var house = { x: 850, y: 330, w: 160, h: 140, ex: 820, ey: 300, ew: 220, eh: 200 };
+  var house2 = { x: 1350, y: 900, w: 160, h: 140, ex: 1320, ey: 870, ew: 220, eh: 200 };
+  var treasure = { x: 450, y: 200, w: 40, h: 40, found: false };
+
+  var trees = [[120,150],[280,100],[500,120],[700,90],[1150,160],[1300,350],[1250,700],[1100,920],[100,550],[150,850],[500,900],[750,880],[1500,200],[1600,600],[1400,1200]].map(function(pt) { return { x: pt[0], y: pt[1], hp: 3, maxHp: 3, alive: true, timer: 0 }; });
+  var ores = [[200,400,'stone'],[650,500,'stone'],[1200,200,'stone'],[400,1100,'iron'],[950,450,'iron'],[1500,800,'iron'],[300,900,'gold'],[1100,1100,'gold'],[700,1300,'diamond'],[1600,1100,'diamond']].map(function(pt) { return { x: pt[0], y: pt[1], type: pt[2], hp: 4, maxHp: 4, alive: true, timer: 0 }; });
+
+  // Зонирование врагов: слабые у стартового дома (850, 330), сильные боссы (1000 HP) у сокровища и 2-го дома
+  var monsters = [
+    [750, 420, 2], [950, 300, 2], [800, 250, 2], [650, 350, 2], // Легкая зона (вокруг 1-го дома)
+    [300, 250, 1000], [1400, 950, 1000], [1500, 1000, 1000], // Опасная зона (боссы возле сокровища и 2-го дома)
+    [400, 750, 2], [200, 700, 2], [1300, 400, 2], [900, 1000, 2]
+  ].map(function(pt) {
+    return { x: pt[0], y: pt[1], hp: pt[2], maxHp: pt[2], alive: true, timer: 0, isBoss: pt[2] >= 1000, isMoving: false, attackTimer: 0 };
+  });
+
+  function canPass(nx, ny, r) {
+    if (p.inHouse) return nx >= 120 && nx <= 680 && ny >= 150 && ny <= 500;
+    if (nx < 40 || nx > W - 40 || ny < 40 || ny > H - 40) return false;
+    for (var i = 0; i < trees.length; i++) { var t = trees[i]; if (t.alive && Math.hypot(nx - t.x, ny - (t.y + 10)) < r + 18) return false; }
+    for (var i = 0; i < ores.length; i++) { var o = ores[i]; if (o.alive && Math.hypot(nx - o.x, ny - o.y) < r + 14) return false; }
+    var hList = [house, house2];
+    for (var i = 0; i < hList.length; i++) { var h = hList[i]; if (nx > h.x - h.w/2 - r && nx < h.x + h.w/2 + r && ny > h.y - h.h/2 - r + 10 && ny < h.y + h.h/2 + r) return false; }
+    return true;
+  }
+
+  function closeAllModals() {
+    menuModal.classList.remove('show');
+    craftModal.classList.remove('show');
+    bagModal.classList.remove('show');
+    merchantModal.classList.remove('show');
+  }
+
+  menuToggle.onclick = function(e) { e.stopPropagation(); initAudio(); if (menuModal.classList.contains('show')) closeAllModals(); else { closeAllModals(); menuModal.classList.add('show'); } };
+  document.onclick = function() { closeAllModals(); };
+  menuModal.onclick = craftModal.onclick = bagModal.onclick = merchantModal.onclick = function(e) { e.stopPropagation(); };
+  
+  document.getElementById('btnBag').onclick = function() { closeAllModals(); updateInv(); bagModal.classList.add('show'); };
+  document.getElementById('btnSave').onclick = function() { closeAllModals(); saveGame(); };
+  document.getElementById('btnQuests').onclick = function() {
+    closeAllModals(); initAudio();
+    if (questDone) toast('✅ Все квесты выполнены!');
+    else if (questActive) toast(questType === 1 ? '🔍 Квест: Найди сокровище!' : '⚔️ Квест: Монстры (' + monsterKills + '/10)');
+    else {
+      questActive = true; SFX.win();
+      if (!treasure.found) { questType = 1; questSpan.textContent = '🔍'; toast('📜 Квест: Найди сокровище!'); } 
+      else { questType = 2; monsterKills = 0; questSpan.textContent = '⚔️'; toast('📜 Квест: Убей 10 монстров!'); }
+    }
+  };
+  document.getElementById('btnCraft').onclick = function() { closeAllModals(); craftModal.classList.add('show'); };
+
+  var jz = document.getElementById('jz'), jt = document.getElementById('jt');
+  var joy = { active: false, dx: 0, dy: 0, touchId: null };
+  function handleJoyMove(cX, cY) {
+    var rect = jz.getBoundingClientRect(), cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    var dx = cX - cx, dy = cY - cy, dist = Math.sqrt(dx*dx + dy*dy), maxDist = 32;
+    if (dist > maxDist) { dx = (dx/dist)*maxDist; dy = (dy/dist)*maxDist; }
+    joy.dx = dx / maxDist; joy.dy = dy / maxDist;
+    jt.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+  }
+  function joyStart(e) {
+    initAudio();
+    if (e.type === 'touchstart') { var touch = e.changedTouches[0]; joy.touchId = touch.identifier; joy.active = true; handleJoyMove(touch.clientX, touch.clientY); } 
+    else if (e.type === 'mousedown') { joy.active = true; handleJoyMove(e.clientX, e.clientY); }
+  }
+  function joyMove(e) {
+    if (!joy.active) return;
+    if (e.type === 'touchmove') { for (var i = 0; i < e.changedTouches.length; i++) { if (e.changedTouches[i].identifier === joy.touchId) { handleJoyMove(e.changedTouches[i].clientX, e.changedTouches[i].clientY); break; } } } 
+    else if (e.type === 'mousemove') { handleJoyMove(e.clientX, e.clientY); }
+  }
+  function joyEnd(e) {
+    if (!joy.active) return;
+    if (e.type === 'touchend' || e.type === 'touchcancel') { for (var i = 0; i < e.changedTouches.length; i++) { if (e.changedTouches[i].identifier === joy.touchId) { joy.active = false; joy.touchId = null; joy.dx = 0; joy.dy = 0; jt.style.transform = 'translate(0px, 0px)'; break; } } } 
+    else if (e.type === 'mouseup') { joy.active = false; joy.dx = 0; joy.dy = 0; jt.style.transform = 'translate(0px, 0px)'; }
+  }
+  jz.addEventListener('touchstart', function(e) { e.preventDefault(); joyStart(e); }, {passive: false});
+  window.addEventListener('touchmove', joyMove, {passive: false}); window.addEventListener('touchend', joyEnd); window.addEventListener('touchcancel', joyEnd);
+  jz.addEventListener('mousedown', joyStart); window.addEventListener('mousemove', joyMove); window.addEventListener('mouseup', joyEnd);
+
+  function doAttack(e) {
+    if (e) e.preventDefault();
+    initAudio();
+    if (p.inHouse) return toast('⚔️ В доме нельзя драться!');
+    SFX.attack(); p.attackAnim = 10;
+    var totalDmg = weaponDmg + p.bonusDmg;
+    var dirAng = Math.atan2(p.lastDir.y, p.lastDir.x);
+    var attackDist = 65;
+
+    monsters.forEach(function(m) {
+      if (!m.alive) return;
+      var dx = m.x - p.x, dy = m.y - p.y;
+      var dist = Math.hypot(dx, dy);
+      var mAng = Math.atan2(dy, dx);
+      var angDiff = Math.abs(dirAng - mAng);
+      if (angDiff > Math.PI) angDiff = 2 * Math.PI - angDiff;
+
+      if (dist < attackDist && angDiff < Math.PI / 1.5) {
+        m.hp -= totalDmg; SFX.hit();
+        spawnDamageText(m.x, m.y - 10, '-' + totalDmg + ' HP', '#ff3333');
+        spawnParticles(m.x, m.y, '#c0392b', 8);
+        if (m.hp <= 0) {
+          m.alive = false; m.timer = 350; 
+          inv.gold += m.isBoss ? 5 : 1; 
+          inv.bones += Math.floor(Math.random() * 2) + 1;
+          if (Math.random() > 0.5) inv.leather += 1;
+          if (Math.random() > 0.7) inv.essence += 1;
+          if (m.isBoss) inv.diamond += 1;
+          updateInv(); SFX.win(); saveGame();
+          toast(m.isBoss ? '🏆 Босс повержен! Лут собран' : '🏆 Монстр повержен!');
+          if (questActive && questType === 2) { if (++monsterKills >= 10) { questDone = true; questActive = false; questSpan.textContent = '✅'; toast('🎉 Квест выполнен!'); } else toast('⚔️ Монстров: ' + monsterKills + '/10'); }
         }
       }
     });
-    enemies = enemies.filter(en => en.hp > 0);
+
+    trees.forEach(function(t) {
+      if (t.alive && Math.abs(p.x - t.x) < 60 && Math.abs(p.y - t.y) < 60) {
+        t.hp -= totalDmg; SFX.hit(); spawnParticles(t.x, t.y - 20, '#8c5a2b', 7);
+        if (t.hp <= 0) { t.alive = false; t.timer = 450; inv.wood += 2; updateInv(); SFX.pickup(); toast('🪵 +2 дерева'); }
+      }
+    });
+
+    ores.forEach(function(o) {
+      if (o.alive && Math.abs(p.x - o.x) < 50 && Math.abs(p.y - o.y) < 50) {
+        var oreDmg = totalDmg * p.pickaxeLevel; o.hp -= oreDmg; SFX.hit();
+        var colors = { stone: '#a6a6a6', iron: '#e0c097', gold: '#f1c40f', diamond: '#00d2d3' };
+        spawnParticles(o.x, o.y, colors[o.type] || '#fff', 8);
+        if (o.hp <= 0) { o.alive = false; o.timer = 500; inv[o.type] += 1; updateInv(); SFX.pickup(); toast('✨ +1 ' + o.type); }
+      }
+    });
   }
 
-  // Обновление частиц
-  particles.forEach(pt => {
-    pt.x += pt.vx; pt.y += pt.vy;
-    pt.life -= dt * 2;
-  });
-  particles = particles.filter(pt => pt.life > 0);
+  function doDash(e) {
+    if (e) e.preventDefault();
+    initAudio();
+    if (p.dashCd > 0) return;
+    if (p.inHouse) return toast('💨 В помещении рывок недоступен!');
+    p.dashTimer = 10; p.dashCd = p.dashMaxCd; SFX.dash();
+  }
 
-  // Проверка триггеров взаимодействия
-  let actionBtn = $('action-btn');
-  let activeAction = null;
+  var atkBtn = document.getElementById('attack'); atkBtn.addEventListener('touchstart', doAttack, {passive: false}); atkBtn.addEventListener('click', doAttack);
+  var dshBtn = document.getElementById('dash'); dshBtn.addEventListener('touchstart', doDash, {passive: false}); dshBtn.addEventListener('click', doDash);
 
-  if (gameState.location === 'field') {
-    bunkers.forEach(b => {
-      if (Math.hypot(p.x - b.x, p.y - b.y) < 55) {
-        activeAction = { text: 'Войти в бункер', callback: () => enterBunker(b) };
+  function checkNear() {
+    if (p.inHouse) {
+      E.textContent = p.hy >= 480 ? '🚪 ВЫЙТИ' : '🚪 К ДВЕРИ'; E.classList.add('show');
+      merchantBtn.classList.remove('show');
+      if (Math.hypot(p.hx - 400, p.hy - 160) < 70) sleepBtn.classList.add('show'); else sleepBtn.classList.remove('show');
+    } else {
+      sleepBtn.classList.remove('show');
+      var h1 = p.x >= house.ex && p.x <= house.ex + house.ew && p.y >= house.ey && p.y <= house.ey + house.eh;
+      var h2 = p.x >= house2.ex && p.x <= house2.ex + house2.ew && p.y >= house2.ey && p.y <= house2.ey + house2.eh;
+      var nearMerchant = Math.hypot(p.x - merchantNpc.x, p.y - merchantNpc.y) < 50;
+
+      if (h1) { p.houseIdx = 1; E.textContent = '🚪 ВОЙТИ В ДОМ 1'; E.classList.add('show'); merchantBtn.classList.remove('show'); } 
+      else if (h2) { p.houseIdx = 2; E.textContent = '🚪 ВОЙТИ В ДОМ 2'; E.classList.add('show'); merchantBtn.classList.remove('show'); } 
+      else if (nearMerchant) { E.classList.remove('show'); merchantBtn.classList.add('show'); }
+      else { E.classList.remove('show'); merchantBtn.classList.remove('show'); }
+    }
+  }
+
+  E.onclick = function() {
+    initAudio();
+    if (p.inHouse) {
+      if (p.hy >= 450) { 
+        p.inHouse = false; toast('🌳 Вы на улице'); 
+        var h = p.houseIdx === 1 ? house : house2; p.x = h.x + h.w / 2; p.y = h.ey + h.eh + 25; 
+        saveGame();
+      } else toast('🚶 Подойди к двери внизу');
+    } else if (E.classList.contains('show')) {
+      p.inHouse = true; p.hx = 400; p.hy = 430; toast('🏠 Вы в доме ' + p.houseIdx);
+      saveGame(); // Сохранение при входе в дом
+    }
+  };
+
+  merchantBtn.onclick = function(e) {
+    e.stopPropagation(); initAudio();
+    closeAllModals(); merchantModal.classList.add('show');
+  };
+
+  sleepBtn.onclick = function() { initAudio(); p.hp = p.maxHp; updateHP(); SFX.sleep(); toast('😴 Вы выспались! Силы восстановлены.'); saveGame(); };
+
+  function update() {
+    p.isMoving = false;
+    if (p.attackAnim > 0) p.attackAnim--;
+    if (p.dashCd > 0) { p.dashCd--; dashCdElem.style.height = (p.dashCd / p.dashMaxCd * 100) + '%'; } else { dashCdElem.style.height = '0%'; }
+
+    var moveDx = 0, moveDy = 0;
+    if (joy.active && (Math.abs(joy.dx) >= 0.05 || Math.abs(joy.dy) >= 0.05)) { moveDx = joy.dx; moveDy = joy.dy; p.lastDir = { x: joy.dx, y: joy.dy }; } 
+    else if (p.dashTimer > 0) { moveDx = p.lastDir.x; moveDy = p.lastDir.y; }
+
+    if (moveDx !== 0 || moveDy !== 0) {
+      p.isMoving = true;
+      var curSpeed = p.speed;
+      if (p.dashTimer > 0) { p.dashTimer--; curSpeed *= 3.0; if (!p.inHouse) spawnParticles(p.x, p.y, '#00d2d3', 2); } 
+      else { if (++stepTimer > 15) { SFX.step(); stepTimer = 0; } }
+
+      if (p.inHouse) { 
+        var nhx = p.hx + moveDx * curSpeed, nhy = p.hy + moveDy * curSpeed;
+        if (canPass(nhx, p.hy, 12)) p.hx = nhx; if (canPass(p.hx, nhy, 12)) p.hy = nhy;
+      } else { 
+        var nx = p.x + moveDx * curSpeed, ny = p.y + moveDy * curSpeed;
+        if (canPass(nx, p.y, 14)) p.x = nx; if (canPass(p.x, ny, 14)) p.y = ny;
       }
-    });
-  } else if (gameState.location === 'city') {
-    if (Math.hypot(p.x - CITY.x, p.y - CITY.y) < 70) {
-      activeAction = { text: 'Торговец Сидорович', callback: openShop };
     }
-    if (Math.hypot(p.x - (CITY.x - 140), p.y - CITY.y) < 60) {
-      activeAction = { text: 'Верстак и Убежище', callback: openBase };
-    }
-  } else if (gameState.location === 'bunker') {
-    if (Math.hypot(p.x - bunkerInterior.exit.x, p.y - bunkerInterior.exit.y) < 50) {
-      activeAction = { text: 'Выйти наружу', callback: exitBunker };
-    }
-    bunkerInterior.containers.forEach(c => {
-      if (!c.looted && Math.hypot(p.x - c.x, p.y - c.y) < 40) {
-        activeAction = { text: 'Обыскать ящик', callback: () => lootContainer(c) };
+
+    if (!p.inHouse) {
+      if (!treasure.found && Math.hypot(p.x - treasure.x, p.y - treasure.y) < 35 && questActive && questType === 1) {
+        treasure.found = true; questActive = false; inv.gold += 10; updateInv(); questSpan.textContent = '✨'; SFX.win(); toast('💎 Сокровище найдено! +10 золота'); saveGame();
       }
-    });
-    // Враги в бункере
-    bunkerInterior.enemies.forEach(en => {
-      let d = Math.hypot(p.x - en.x, p.y - en.y);
-      if (d < 300) {
-        en.x += (p.x - en.x) / d * 1.6;
-        en.y += (p.y - en.y) / d * 1.6;
-        if (d < 20) {
-          p.hp -= 15 * dt;
-          playSound('hit');
+      monsters.forEach(function(m) {
+        m.isMoving = false;
+        if (!m.alive) { if (--m.timer <= 0) { m.alive = true; m.hp = m.maxHp; } } 
+        else {
+          var d = Math.hypot(p.x - m.x, p.y - m.y);
+          if (d < 160 && d > 25) { 
+            var mNx = m.x + ((p.x - m.x)/d)*0.7; var mNy = m.y + ((p.y - m.y)/d)*0.7;
+            if (canPass(mNx, m.y, 14)) m.x = mNx; if (canPass(m.x, mNy, 14)) m.y = mNy;
+            m.isMoving = true; 
+          } else if (d <= 25) {
+            if (m.attackTimer <= 0) {
+              var dmg = m.isBoss ? 20 : 8;
+              var actualDmg = Math.max(1, dmg - (p.armorLevel * 2));
+              p.hp -= actualDmg; m.attackTimer = 45;
+              spawnDamageText(p.x, p.y - 20, '-' + actualDmg + ' HP', '#ff3333');
+              updateHP(); SFX.hit();
+              if (p.hp <= 0) die();
+            }
+          }
         }
+        if (m.attackTimer > 0) m.attackTimer--;
+      });
+      trees.forEach(function(t) { if (!t.alive && --t.timer <= 0) { t.alive = true; t.hp = t.maxHp; } });
+      ores.forEach(function(o) { if (!o.alive && --o.timer <= 0) { o.alive = true; o.hp = o.maxHp; } });
+    }
+  }
+
+  function drawEntity(img, fw, fh, x, y, isMoving) {
+    var frameIdx = isMoving ? (Math.floor(Date.now() / 150) % 2) : 0; 
+    X.save(); X.translate(x, y); if (isMoving) X.rotate(Math.sin(Date.now() / 120) * 0.08);
+    X.drawImage(img, frameIdx * fw, 0, fw, fh, -fw/2, -fh/2, fw, fh); X.restore();
+  }
+
+  function drawPlayerWithSword(x, y) {
+    X.save(); X.translate(x, y);
+    var bob = p.isMoving ? Math.sin(Date.now() / 120) * 2 : 0;
+    X.fillStyle = 'rgba(0,0,0,0.45)'; X.beginPath(); X.ellipse(0, 18, 12, 4.5, 0, 0, Math.PI*2); X.fill();
+    X.fillStyle = '#780827'; X.fillRect(-11, -10 + bob, 22, 22);
+    X.fillStyle = '#b00020'; X.fillRect(-9, -8 + bob, 18, 20);
+    X.fillStyle = '#1a252f'; X.fillRect(-8, 10, 6, 8); X.fillRect(2, 10, 6, 8);
+    X.fillStyle = '#f1c40f'; X.fillRect(-8, 15, 6, 3); X.fillRect(2, 15, 6, 3);
+    
+    var armorColor = p.armorLevel === 3 ? '#00d2d3' : p.armorLevel === 2 ? '#f1c40f' : p.armorLevel === 1 ? '#a6a6a6' : '#1c2833';
+    X.fillStyle = armorColor; X.fillRect(-10, -12 + bob, 20, 22);
+    X.fillStyle = '#34495e'; X.fillRect(-8, -10 + bob, 16, 18);
+    X.fillStyle = '#ecf0f1'; X.fillRect(-6, -8 + bob, 3, 14);
+    X.fillStyle = '#b7950b'; X.fillRect(-15, -12 + bob, 6, 8); X.fillRect(9, -12 + bob, 6, 8);
+
+    X.save(); X.translate(0, -14 + bob);
+    X.fillStyle = armorColor; X.fillRect(-8, -10, 16, 16);
+    X.fillStyle = '#34495e'; X.fillRect(-7, -9, 14, 14);
+    X.fillStyle = '#95a5a6'; X.fillRect(-5, -8, 3, 10);
+    X.fillStyle = '#00f2fe'; X.fillRect(-5, 2, 10, 3);
+    X.fillStyle = '#ffffff'; X.fillRect(-2, 3, 4, 1);
+    X.fillStyle = '#b00020'; X.fillRect(-2, -14, 4, 5);
+    X.fillStyle = '#ff2a4b'; X.fillRect(-1, -13, 2, 4);
+    X.restore();
+
+    X.save();
+    var handX = 10 + (p.isMoving ? Math.sin(Date.now() / 120) * 2 : 0), handY = -2 + bob;
+    X.translate(handX, handY);
+    var angle = -Math.PI / 6;
+    if (p.attackAnim > 0) { var progress = (10 - p.attackAnim) / 10; angle = -Math.PI / 3 + progress * (Math.PI * 0.8); }
+    X.rotate(angle);
+    var bladeColor = weaponColors[weaponDmg] || '#8c5a2b';
+    X.fillStyle = '#543b2b'; X.fillRect(-1, 2, 3, 5); X.fillStyle = '#f1c40f'; X.fillRect(-3, 0, 7, 2);
+    X.fillStyle = bladeColor; X.fillRect(-1, -12, 3, 12); X.fillStyle = '#ffffff'; X.fillRect(0, -11, 1, 9);
+    X.restore();
+    X.restore();
+  }
+
+  var grassPattern = X.createPattern(TEX.grass, 'repeat');
+  var houseFloorPattern = X.createPattern(TEX.houseFloor, 'repeat');
+  var houseWallPattern = X.createPattern(TEX.houseWall, 'repeat');
+
+  function render() {
+    update(); checkNear();
+
+    if (p.inHouse) {
+      X.fillStyle = '#0a0a0d'; X.fillRect(0, 0, 800, 600);
+      X.fillStyle = houseWallPattern; X.fillRect(60, 40, 680, 480);
+      X.fillStyle = houseFloorPattern; X.fillRect(90, 110, 620, 390);
+      X.fillStyle = '#170c05'; X.fillRect(90, 106, 620, 6); X.fillRect(86, 110, 6, 390); X.fillRect(708, 110, 6, 390);
+      X.fillStyle = '#f1c40f'; X.fillRect(200, 48, 60, 40); X.fillStyle = '#3d2515'; X.fillRect(228, 48, 4, 40); X.fillRect(200, 66, 60, 4);
+      X.fillStyle = 'rgba(255, 235, 150, 0.15)'; X.beginPath(); X.moveTo(200, 110); X.lineTo(260, 110); X.lineTo(320, 320); X.lineTo(180, 320); X.fill();
+      X.drawImage(TEX.carpet, 340, 260); X.drawImage(TEX.bed, 365, 120); X.drawImage(TEX.table, 580, 180);
+      X.fillStyle = '#2b1a10'; X.fillRect(370, 495, 60, 15); X.fillStyle = '#fff'; X.font = 'bold 12px monospace'; X.fillText('ДОМ ' + p.houseIdx, 365, 30);
+      drawPlayerWithSword(p.hx, p.hy);
+    } else {
+      X.save(); X.translate(Math.floor(-p.x + 400), Math.floor(-p.y + 300));
+      X.fillStyle = grassPattern; X.fillRect(Math.floor(p.x - 450), Math.floor(p.y - 350), 900, 700);
+      X.restore();
+
+      trees.forEach(function(t) { var sx = t.x - p.x + 400, sy = t.y - p.y + 300; if (sx > -100 && sx < 900 && sy > -120 && sy < 720) { if (t.alive) X.drawImage(TEX.tree, sx - 32, sy - 80); else { X.fillStyle = '#422c1b'; X.fillRect(sx - 15, sy - 5, 30, 10); } } });
+      ores.forEach(function(o) { var sx = o.x - p.x + 400, sy = o.y - p.y + 300; if (sx > -40 && sx < 840 && sy > -40 && sy < 640) { if (o.alive) { var img = o.type === 'stone' ? TEX.stoneOre : o.type === 'iron' ? TEX.ironOre : o.type === 'gold' ? TEX.goldOre : TEX.diamondOre; X.drawImage(img, sx - 20, sy - 20); } else { X.fillStyle = '#333'; X.fillRect(sx - 8, sy - 8, 16, 16); } } });
+
+      var sx1 = house.x - p.x + 400, sy1 = house.y - p.y + 300; if (sx1 > -200 && sx1 < 1000 && sy1 > -200 && sy1 < 800) X.drawImage(TEX.house, sx1 - house.w/2, sy1 - house.h/2);
+      var sx2 = house2.x - p.x + 400, sy2 = house2.y - p.y + 300; if (sx2 > -200 && sx2 < 1000 && sy2 > -200 && sy2 < 800) X.drawImage(TEX.house, sx2 - house2.w/2, sy2 - house2.h/2);
+
+      var mx = merchantNpc.x - p.x + 400, my = merchantNpc.y - p.y + 300;
+      if (mx > -40 && mx < 840 && my > -40 && my < 640) {
+        X.drawImage(TEX.merchant, mx - 20, my - 20);
+        X.fillStyle = '#f1c40f'; X.font = 'bold 11px monospace'; X.fillText('🧙‍♂️ ТОРГОВЕЦ', mx - 35, my - 25);
       }
-    });
-  }
 
-  if (activeAction) {
-    actionBtn.innerText = activeAction.text;
-    actionBtn.style.display = 'block';
-    actionBtn.onclick = activeAction.callback;
-  } else {
-    actionBtn.style.display = 'none';
-  }
+      if (!treasure.found) { var tx = treasure.x - p.x + 400, ty = treasure.y - p.y + 300; if (tx > -60 && tx < 860 && ty > -60 && ty < 660) { X.drawImage(TEX.treasure, tx - 20, ty - 20); X.fillStyle = '#FFD700'; X.font = 'bold 12px monospace'; X.fillText('💎 СОКРОВИЩЕ', tx - 36, ty - 25); } }
 
-  updateHUD();
-}
+      monsters.forEach(function(m) {
+        if (!m.alive) return;
+        var sx = m.x - p.x + 400, sy = m.y - p.y + 300;
+        if (sx > -40 && sx < 840 && sy > -40 && sy < 640) {
+          var img = m.isBoss ? TEX.boss : TEX.monster, fw = m.isBoss ? 60 : 40, fh = m.isBoss ? 60 : 40, offset = m.isBoss ? 30 : 20;
+          drawEntity(img, fw, fh, sx, sy, m.isMoving);
+          X.fillStyle = '#000'; X.fillRect(sx - 16, sy - offset - 10, 32, 4);
+          X.fillStyle = '#2ecc71'; X.fillRect(sx - 15, sy - offset - 9, Math.max(0, 30 * (m.hp / m.maxHp)), 2);
+        }
+      });
 
-function enterBunker(b) {
-  gameState.location = 'bunker';
-  gameState.currentBunker = b;
-  let p = gameState.player;
-  p.x = 400; p.y = 500;
-  bunkerInterior.exit = { x: 400, y: 550 };
-  
-  bunkerInterior.containers = [
-    { x: 250, y: 200, item: b.lootTable[Math.floor(Math.random() * b.lootTable.length)], looted: false },
-    { x: 550, y: 200, item: b.lootTable[Math.floor(Math.random() * b.lootTable.length)], looted: false }
-  ];
-  bunkerInterior.enemies = [];
-  if (b.tier > 1) {
-    bunkerInterior.enemies.push({ x: 400, y: 250, hp: 60 });
-  }
-  showNotification('Вы спустились в ' + b.name);
-  playSound('item');
-}
+      updateAndDrawParticles();
 
-function exitBunker() {
-  let b = gameState.currentBunker;
-  gameState.location = 'field';
-  let p = gameState.player;
-  p.x = b.x; p.y = b.y + 60;
-  showNotification('Вы вышли из бункера');
-  playSound('item');
-}
-
-function lootContainer(c) {
-  c.looted = true;
-  addItem(c.item, 1);
-  showNotification('Найдено: ' + ITEMS[c.item].name);
-  playSound('item');
-}
-
-function addItem(id, count) {
-  let item = gameState.player.inventory.find(i => i.id === id);
-  if (item) item.count += count;
-  else gameState.player.inventory.push({ id, count });
-}
-
-function useItem(id) {
-  let p = gameState.player;
-  let item = p.inventory.find(i => i.id === id);
-  if (!item || item.count <= 0) return;
-
-  if (id === 'filter') {
-    p.filter = MASKS[p.mask].maxFilter;
-    item.count--;
-    playSound('item');
-    showNotification('Фильтр заменен!');
-  } else if (id === 'medkit') {
-    p.hp = Math.min(p.maxHp, p.hp + 50);
-    item.count--;
-    playSound('item');
-    showNotification('Здоровье восстановлено!');
-  } else if (id === 'ammo') {
-    p.ammo += 30;
-    item.count--;
-    playSound('item');
-    showNotification('Магазин снаряжен!');
-  }
-  p.inventory = p.inventory.filter(i => i.count > 0);
-}
-
-function updateHUD() {
-  let p = gameState.player;
-  let mask = MASKS[p.mask];
-  $('hp-txt').innerText = `${Math.floor(p.hp)}/${p.maxHp}`;
-  $('hp-bar').style.width = `${(p.hp / p.maxHp) * 100}%`;
-  
-  $('filter-txt').innerText = `${Math.floor(p.filter)}/${mask.maxFilter}`;
-  $('filter-bar').style.width = `${(p.filter / mask.maxFilter) * 100}%`;
-  
-  $('stamina-bar').style.width = `${(p.stamina / p.maxStamina) * 100}%`;
-  $('money-txt').innerText = gameState.money;
-  $('ammo-txt').innerText = p.ammo;
-  $('mask-info').innerText = `Маска: ${mask.name}`;
-  $('loc-info').innerText = `Локация: ${gameState.location === 'city' ? 'Город' : gameState.location === 'field' ? 'Периметр' : 'Бункер'}`;
-
-  let invDiv = $('inventory-bar');
-  invDiv.innerHTML = '';
-  p.inventory.forEach(inv => {
-    let def = ITEMS[inv.id];
-    let clickable = def.type === 'consumable';
-    invDiv.innerHTML += `<div style="background: #15291a; border: 1px solid #3a6b43; padding: 4px 8px; border-radius: 4px; font-size: 11px; ${clickable ? 'cursor:pointer;' : ''}" ${clickable ? `onclick="useItem('${inv.id}')"` : ''}>${def.name} x${inv.count}</div>`;
-  });
-}
-
-// Окно торговли
-function openShop() {
-  let list = $('shop-list');
-  let html = '';
-  gameState.player.inventory.forEach(inv => {
-    let def = ITEMS[inv.id];
-    if (def.sell) {
-      html += `<div class="item-row"><span>${def.name} x${inv.count} (${def.sell}₽/шт)</span><button class="btn-small" onclick="sellItem('${inv.id}')">Продать</button></div>`;
-    }
-  });
-  html += `<h3 style="margin-top:15px; color:#4cd137;">Купить снаряжение</h3>`;
-  ['filter', 'medkit', 'ammo'].forEach(k => {
-    html += `<div class="item-row"><span>${ITEMS[k].name} (${ITEMS[k].price}₽)</span><button class="btn-small" onclick="buyItem('${k}')">Купить</button></div>`;
-  });
-  Object.keys(MASKS).forEach(mKey => {
-    if (gameState.player.mask !== mKey) {
-      html += `<div class="item-row"><span>${MASKS[mKey].name} (${MASKS[mKey].price}₽)</span><button class="btn-small" onclick="buyMask('${mKey}')">Купить</button></div>`;
-    }
-  });
-  list.innerHTML = html;
-  $('shop-modal').style.display = 'block';
-}
-
-function sellItem(id) {
-  let p = gameState.player;
-  let inv = p.inventory.find(i => i.id === id);
-  if (inv && inv.count > 0) {
-    inv.count--;
-    gameState.money += ITEMS[id].sell;
-    if (inv.count <= 0) p.inventory = p.inventory.filter(i => i.count > 0);
-    playSound('item');
-    openShop();
-  }
-}
-
-function buyItem(id) {
-  let def = ITEMS[id];
-  if (gameState.money >= def.price) {
-    gameState.money -= def.price;
-    addItem(id, 1);
-    playSound('item');
-    openShop();
-  } else {
-    showNotification('Недостаточно рублей!');
-  }
-}
-
-function buyMask(mKey) {
-  let m = MASKS[mKey];
-  if (gameState.money >= m.price) {
-    gameState.money -= m.price;
-    gameState.player.mask = mKey;
-    gameState.player.filter = m.maxFilter;
-    playSound('item');
-    openShop();
-    showNotification('Приобретена новая защита!');
-  } else {
-    showNotification('Не хватает средств!');
-  }
-}
-
-// Убежище
-function openBase() {
-  let list = $('base-list');
-  let upgradeCost = (gameState.bunkerUpgrade + 1) * 600;
-  list.innerHTML = `
-    <div style="font-size: 13px; margin-bottom: 15px;">Уровень вентиляции убежища: <b>${gameState.bunkerUpgrade}</b></div>
-    <button class="btn-small" onclick="upgradeBase()">Улучшить систему очистки (${upgradeCost}₽)</button>
-  `;
-  $('base-modal').style.display = 'block';
-}
-
-function upgradeBase() {
-  let cost = (gameState.bunkerUpgrade + 1) * 600;
-  if (gameState.money >= cost) {
-    gameState.money -= cost;
-    gameState.bunkerUpgrade++;
-    playSound('item');
-    showNotification('Убежище улучшено!');
-    openBase();
-  } else {
-    showNotification('Недостаточно средств для апгрейда!');
-  }
-}
-
-function closeModals() {
-  $('shop-modal').style.display = 'none';
-  $('base-modal').style.display = 'none';
-}
-
-// Рендеринг графики
-function render() {
-  ctx.clearRect(0, 0, W, H);
-  let p = gameState.player;
-
-  ctx.save();
-  ctx.translate(W / 2 - p.x, H / 2 - p.y);
-
-  if (gameState.location !== 'bunker') {
-    // Рендер открытого мира (Лес / Периметр)
-    ctx.fillStyle = '#0b1c0e';
-    ctx.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
-
-    // Текстурные процедурные детали сетки мира
-    ctx.strokeStyle = '#122615';
-    ctx.lineWidth = 2;
-    for (let x = 0; x < MAP_SIZE; x += 300) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, MAP_SIZE); ctx.stroke();
-    }
-    for (let y = 0; y < MAP_SIZE; y += 300) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(MAP_SIZE, y); ctx.stroke();
-    }
-
-    // Деревья и аномалии
-    for (let i = 200; i < MAP_SIZE; i += 400) {
-      for (let j = 200; j < MAP_SIZE; j += 400) {
-        ctx.fillStyle = '#143819';
-        ctx.beginPath(); ctx.arc(i, j, 45, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#1e5226';
-        ctx.beginPath(); ctx.arc(i - 8, j - 8, 25, 0, Math.PI * 2); ctx.fill();
+      if (p.attackAnim > 0) {
+        X.save(); X.translate(400, 300);
+        var dirAng = Math.atan2(p.lastDir.y, p.lastDir.x);
+        X.rotate(dirAng);
+        X.beginPath();
+        X.arc(0, 0, 55, -Math.PI/2.5, Math.PI/2.5);
+        X.lineWidth = 14;
+        X.strokeStyle = weaponColors[weaponDmg] || '#fff';
+        X.globalAlpha = (p.attackAnim / 10) * 0.5;
+        X.stroke();
+        X.restore();
       }
-    }
 
-    // Зона города
-    ctx.fillStyle = '#1b3822';
-    ctx.beginPath(); ctx.arc(CITY.x, CITY.y, CITY.r, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#3a7a46'; ctx.lineWidth = 4; ctx.stroke();
-
-    // Здания в городе
-    ctx.fillStyle = '#2c4a33';
-    ctx.fillRect(CITY.x - 70, CITY.y - 70, 140, 140);
-    ctx.fillStyle = '#ffd700';
-    ctx.font = 'bold 14px monospace';
-    ctx.fillText('СИДОРОВИЧ', CITY.x - 50, CITY.y - 80);
-
-    ctx.fillStyle = '#263b4a';
-    ctx.fillRect(CITY.x - 180, CITY.y - 40, 80, 80);
-    ctx.fillStyle = '#74b9ff';
-    ctx.fillText('УБЕЖИЩЕ', CITY.x - 170, CITY.y - 50);
-
-    // Бункеры на карте
-    bunkers.forEach(b => {
-      ctx.fillStyle = '#4a382c';
-      ctx.fillRect(b.x - 25, b.y - 25, 50, 50);
-      ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 2; ctx.strokeRect(b.x - 25, b.y - 25, 50, 50);
-      ctx.fillStyle = '#fff';
-      ctx.fillText(b.name, b.x - 40, b.y - 32);
-    });
-
-    // Враги
-    enemies.forEach(en => {
-      ctx.fillStyle = '#c0392b';
-      ctx.beginPath(); ctx.arc(en.x, en.y, 14, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#000';
-      ctx.fillRect(en.x - 10, en.y - 22, 20, 4);
-      ctx.fillStyle = '#2ecc71';
-      ctx.fillRect(en.x - 10, en.y - 22, 20 * (en.hp / 50), 4);
-    });
-
-  } else {
-    // Рендер интерьера бункера
-    ctx.fillStyle = '#111311';
-    ctx.fillRect(100, 80, 600, 520);
-    ctx.strokeStyle = '#3a4a3a'; ctx.lineWidth = 6;
-    ctx.strokeRect(100, 80, 600, 520);
-
-    // Выход
-    ctx.fillStyle = '#c0392b';
-    ctx.fillRect(bunkerInterior.exit.x - 20, bunkerInterior.exit.y - 20, 40, 40);
-
-    // Контейнеры лута
-    bunkerInterior.containers.forEach(c => {
-      ctx.fillStyle = c.looted ? '#333' : '#d4ac0d';
-      ctx.fillRect(c.x - 16, c.y - 16, 32, 32);
-    });
-
-    // Враги в бункере
-    bunkerInterior.enemies.forEach(en => {
-      ctx.fillStyle = '#8e44ad';
-      ctx.beginPath(); ctx.arc(en.x, en.y, 14, 0, Math.PI * 2); ctx.fill();
-    });
-  }
-
-  // Отрисовка игрока (детальная модель)
-  ctx.save();
-  ctx.translate(p.x, p.y);
-  // Тело в плаще
-  ctx.fillStyle = '#2c3e50';
-  ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2); ctx.fill();
-  // Противогаз / шлем
-  ctx.fillStyle = '#7f8c8d';
-  ctx.beginPath(); ctx.arc(0, -4, 10, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#111';
-  ctx.fillRect(-4, -6, 8, 4);
-  ctx.restore();
-
-  // Частицы
-  particles.forEach(pt => {
-    ctx.fillStyle = pt.color;
-    ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2); ctx.fill();
-  });
-
-  ctx.restore();
-
-  // Виньетка и маска тумана
-  let maskDef = MASKS[p.mask];
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, 0, W, H);
-  ctx.arc(W / 2, H / 2, maskDef.vision, 0, Math.PI * 2, true);
-  ctx.clip();
-  ctx.fillStyle = 'rgba(2, 5, 3, 0.97)';
-  ctx.fillRect(0, 0, W, H);
-  ctx.restore();
-
-  // Ободок маски
-  ctx.strokeStyle = '#1b301e';
-  ctx.lineWidth = 12;
-  ctx.beginPath();
-  ctx.arc(W / 2, H / 2, maskDef.vision, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // Стрелка компаса на город/цель
-  if (gameState.location === 'field') {
-    let angle = Math.atan2(CITY.y - p.y, CITY.x - p.x);
-    let dist = Math.hypot(CITY.x - p.x, CITY.y - p.y);
-    if (dist > W * 0.4) {
-      ctx.save();
-      ctx.translate(W / 2 + Math.cos(angle) * (W * 0.38), H / 2 + Math.sin(angle) * (H * 0.38));
-      ctx.rotate(angle);
-      ctx.fillStyle = '#f1c40f';
-      ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -6); ctx.lineTo(-8, 6); ctx.fill();
-      ctx.restore();
+      drawPlayerWithSword(400, 300);
     }
   }
-}
 
-requestAnimationFrame(gameLoop);
+  var raf = window.requestAnimationFrame || window.webkitRequestAnimationFrame;
+  function loop() { render(); if (raf) raf(loop); else setTimeout(loop, 33); }
+  updateInv();
+  loop();
+})();
 </script>
 </body>
 </html>
