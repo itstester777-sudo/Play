@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>S.T.A.L.K.E.R. 2D: Bunker Extraction Extended Edition</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; font-family: 'Courier New', monospace; }
+  body { background: #030503; color: #d0ffd0; overflow: hidden; width: 100vw; height: 100vh; }
+  canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+  
+  #ui-layer {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 15px;
+  }
+  .hud-panel {
+    background: rgba(10, 18, 12, 0.9); border: 2px solid #2e5a36; border-radius: 6px;
+    padding: 10px 14px; pointer-events: auto; font-weight: bold; font-size: 13px; text-shadow: 1px 1px #000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  }
+  .progress-container { width: 140px; height: 12px; background: #0c140e; border: 1px solid #3a6b43; border-radius: 3px; margin-top: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; transition: width 0.2s ease; }
+  #hp-bar { background: linear-gradient(90deg, #b32d2d, #e74c3c); }
+  #filter-bar { background: linear-gradient(90deg, #2d89b3, #3498db); }
+  #stamina-bar { background: linear-gradient(90deg, #b39b2d, #f1c40f); }
+
+  .action-btn {
+    position: absolute; bottom: 25%; right: 12%; padding: 16px 26px; font-size: 16px;
+    background: #1e4a27; color: #fff; border: 2px solid #4cd137; border-radius: 8px;
+    cursor: pointer; font-weight: bold; display: none; pointer-events: auto;
+    box-shadow: 0 0 15px rgba(76,209,55,0.4); text-transform: uppercase;
+  }
+  .action-btn:active { background: #4cd137; color: #000; }
+
+  #joystick-base {
+    position: absolute; bottom: 30px; left: 30px; width: 120px; height: 120px;
+    border: 2px dashed rgba(76,209,55,0.4); border-radius: 50%; pointer-events: auto; touch-action: none;
+  }
+  #joystick-knob {
+    position: absolute; top: 35px; left: 35px; width: 50px; height: 50px;
+    background: rgba(76,209,55,0.6); border: 2px solid #4cd137; border-radius: 50%;
+  }
+
+  #fire-btn {
+    position: absolute; bottom: 40px; right: 30px; width: 85px; height: 85px;
+    background: rgba(189, 45, 45, 0.5); border: 2px solid #e74c3c; border-radius: 50%;
+    pointer-events: auto; display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 14px; color: #fff; touch-action: none;
+  }
+  #fire-btn:active { background: rgba(231, 76, 60, 0.9); }
+
+  .modal-window {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #0a140d; border: 2px solid #4cd137; width: 92%; max-width: 420px;
+    padding: 20px; display: none; pointer-events: auto; z-index: 100; border-radius: 8px;
+    max-height: 85vh; overflow-y: auto; box-shadow: 0 0 30px rgba(0,0,0,0.9);
+  }
+  .modal-window h2 { color: #4cd137; margin-bottom: 15px; border-bottom: 1px solid #2e5a36; padding-bottom: 5px; }
+  .item-row { display: flex; justify-content: space-between; align-items: center; background: #132417; padding: 8px 12px; margin: 6px 0; border: 1px solid #2e5a36; border-radius: 4px; }
+  .btn-small { background: #2e5a36; color: #fff; border: 1px solid #4cd137; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+  .btn-small:active { background: #4cd137; color: #000; }
+  .close-btn { width: 100%; margin-top: 15px; background: #822222; border-color: #e74c3c; }
+
+  #notification {
+    position: absolute; top: 12%; width: 100%; text-align: center; font-size: 20px;
+    font-weight: bold; color: #a3ffa3; text-shadow: 0 0 10px #000; opacity: 0; transition: opacity 0.6s ease; pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="ui-layer">
+  <div style="display: flex; justify-content: space-between;">
+    <div class="hud-panel">
+      ЗДОРОВЬЕ <span id="hp-txt">100/100</span>
+      <div class="progress-container"><div id="hp-bar" class="progress-fill" style="width: 100%;"></div></div>
+      ФИЛЬТР <span id="filter-txt">100/100</span>
+      <div class="progress-container"><div id="filter-bar" class="progress-fill" style="width: 100%;"></div></div>
+      ВЫНОСЛИВОСТЬ
+      <div class="progress-container"><div id="stamina-bar" class="progress-fill" style="width: 100%;"></div></div>
+    </div>
+    <div class="hud-panel" style="text-align: right;">
+      <div style="color: #f1c40f; font-size: 15px; margin-bottom: 4px;">РУБЛИ: <span id="money-txt">500</span> ₽</div>
+      <div id="mask-info" style="color: #78e08f; font-size: 11px;">Маска: ГП-5</div>
+      <div id="loc-info" style="color: #82ccdd; font-size: 11px;">Локация: Периметр</div>
+      <div style="color: #aaa; font-size: 11px; margin-top: 4px;">Патроны: <span id="ammo-txt">30</span></div>
+    </div>
+  </div>
+  <div class="hud-panel" id="inventory-bar" style="align-self: center; display: flex; gap: 8px;"></div>
+</div>
+
+<button id="action-btn" class="action-btn">ДЕЙСТВИЕ</button>
+<div id="joystick-base"><div id="joystick-knob"></div></div>
+<div id="fire-btn">ОГОНЬ</div>
+<div id="notification"></div>
+
+<div id="shop-modal" class="modal-window">
+  <h2>ТОРГОВЕЦ СИДОРОВИЧ</h2>
+  <div id="shop-list"></div>
+  <button class="btn-small close-btn" onclick="closeModals()">ЗАКРЫТЬ</button>
+</div>
+
+<div id="base-modal" class="modal-window">
+  <h2>УБЕЖИЩЕ И ВЕРСТАК</h2>
+  <div id="base-list"></div>
+  <button class="btn-small close-btn" onclick="closeModals()">ЗАКРЫТЬ</button>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const canvas = $('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Звуковой движок на Web Audio API
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(type) {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  let osc = audioCtx.createOscillator();
+  let gain = audioCtx.createGain();
+  let now = audioCtx.currentTime;
+  osc.connect(gain); gain.connect(audioCtx.destination);
+
+  if (type === 'step') {
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(80, now);
+    osc.frequency.exponentialRampToValueAtTime(30, now + 0.08);
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.08);
+    osc.start(now); osc.stop(now + 0.08);
+  } else if (type === 'shot') {
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(300, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.15);
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.15);
+    osc.start(now); osc.stop(now + 0.15);
+  } else if (type === 'hit') {
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.linearRampToValueAtTime(40, now + 0.2);
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.2);
+    osc.start(now); osc.stop(now + 0.2);
+  } else if (type === 'item') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.setValueAtTime(800, now + 0.1);
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.linearRampToValueAtTime(0, now + 0.25);
+    osc.start(now); osc.stop(now + 0.25);
+  }
+}
+
+// Константы и конфигурация
+const MAP_SIZE = 4000;
+const CITY = { x: 2000, y: 2000, r: 400 };
+
+const MASKS = {
+  gp5: { name: 'ГП-5', maxFilter: 100, vision: 220, price: 0 },
+  pmk: { name: 'ПМК-3', maxFilter: 220, vision: 280, price: 1200 },
+  seva: { name: 'КОСТЮМ СЕВА', maxFilter: 400, vision: 360, price: 4500 }
+};
+
+const ITEMS = {
+  filter: { name: 'Фильтр', price: 150, sell: 70, type: 'consumable' },
+  medkit: { name: 'Аптечка ИИ-1', price: 250, sell: 120, type: 'consumable' },
+  ammo: { name: 'Патроны 5.45', price: 300, sell: 150, type: 'consumable' },
+  junk: { name: 'Металлолом', sell: 80, type: 'loot' },
+  circuit: { name: 'Микросхема', sell: 350, type: 'loot' },
+  artifact: { name: 'Артефакт "Выверт"', sell: 1200, type: 'loot' }
+};
+
+let gameState = {
+  location: 'field', // field, city, bunker
+  currentBunker: null,
+  money: 600,
+  bunkerUpgrade: 0,
+  player: {
+    x: CITY.x, y: CITY.y + 150,
+    speed: 3.5, stamina: 100, maxStamina: 100,
+    hp: 100, maxHp: 100,
+    filter: 100, mask: 'gp5',
+    ammo: 60,
+    inventory: [{ id: 'filter', count: 2 }, { id: 'medkit', count: 1 }]
+  }
+};
+
+let bunkers = [
+  { id: 1, name: 'Бункер "Заброшка" (Тир 1)', x: 1200, y: 1400, tier: 1, lootTable: ['junk', 'filter'] },
+  { id: 2, name: 'Бункер "Лаборатория X-18" (Тир 2)', x: 2800, y: 1200, tier: 2, lootTable: ['circuit', 'filter', 'ammo'] },
+  { id: 3, name: 'Бункер "Монолит" (Тир 3)', x: 1000, y: 3100, tier: 3, lootTable: ['artifact', 'circuit', 'ammo'] }
+];
+
+let enemies = [];
+let bullets = [];
+let particles = [];
+let bunkerInterior = { containers: [], enemies: [], exit: { x: 400, y: 550 } };
+
+// Спавн врагов в открытом мире
+for (let i = 0; i < 45; i++) {
+  let ex = Math.random() * MAP_SIZE;
+  let ey = Math.random() * MAP_SIZE;
+  if (Math.hypot(ex - CITY.x, ey - CITY.y) > CITY.r + 300) {
+    enemies.push({ x: ex, y: ey, type: Math.random() > 0.4 ? 'mutant' : 'bandit', hp: 50, speed: 1.8, damage: 12, range: 250 });
+  }
+}
+
+// Управление вводами
+let keys = {};
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+let joystick = { active: false, id: null, x: 0, y: 0, dx: 0, dy: 0 };
+const jBase = $('joystick-base');
+const jKnob = $('joystick-knob');
+
+jBase.addEventListener('pointerdown', e => {
+  joystick.active = true;
+  joystick.id = e.pointerId;
+  updateJoystick(e);
+});
+window.addEventListener('pointermove', e => {
+  if (joystick.active && e.pointerId === joystick.id) updateJoystick(e);
+});
+window.addEventListener('pointerup', e => {
+  if (joystick.active && e.pointerId === joystick.id) {
+    joystick.active = false;
+    joystick.dx = 0; joystick.dy = 0;
+    jKnob.style.transform = `translate(0px, 0px)`;
+  }
+});
+
+function updateJoystick(e) {
+  let rect = jBase.getBoundingClientRect();
+  let cx = rect.left + rect.width / 2;
+  let cy = rect.top + rect.height / 2;
+  let dx = e.clientX - cx;
+  let dy = e.clientY - cy;
+  let dist = Math.hypot(dx, dy);
+  let maxDist = 40;
+  if (dist > maxDist) {
+    dx = (dx / dist) * maxDist;
+    dy = (dy / dist) * maxDist;
+  }
+  jKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+  joystick.dx = dx / maxDist;
+  joystick.dy = dy / maxDist;
+}
+
+$('fire-btn').addEventListener('pointerdown', () => {
+  if (gameState.player.ammo > 0 && gameState.location !== 'bunker') { // Стрельба упрощенная
+    gameState.player.ammo--;
+    playSound('shot');
+    // Найти ближайшего врага и нанести урон
+    let p = gameState.player;
+    enemies.forEach(en => {
+      if (Math.hypot(p.x - en.x, p.y - en.y) < 300) {
+        en.hp -= 35;
+        createParticles(en.x, en.y, '#e74c3c', 6);
+      }
+    });
+  }
+});
+
+function createParticles(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x, y, vx: (Math.random() - 0.5) * 6, vy: (Math.random() - 0.5) * 6,
+      life: 1, color, size: Math.random() * 3 + 2
+    });
+  }
+}
+
+function showNotification(text) {
+  let n = $('notification');
+  n.innerText = text;
+  n.style.opacity = '1';
+  setTimeout(() => n.style.opacity = '0', 2200);
+}
+
+// Главный игровой цикл
+let lastTime = performance.now();
+let stepTimer = 0;
+
+function gameLoop(now) {
+  let dt = Math.min((now - lastTime) / 1000, 0.1);
+  lastTime = now;
+
+  update(dt);
+  render();
+
+  requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+  let p = gameState.player;
+  let moveX = 0, moveY = 0;
+
+  if (keys['w'] || keys['ц'] || keys['arrowup']) moveY -= 1;
+  if (keys['s'] || keys['ы'] || keys['arrowdown']) moveY += 1;
+  if (keys['a'] || keys['ф'] || keys['arrowleft']) moveX -= 1;
+  if (keys['d'] || keys['в'] || keys['arrowright']) moveX += 1;
+
+  if (joystick.active) {
+    moveX = joystick.dx;
+    moveY = joystick.dy;
+  }
+
+  let len = Math.hypot(moveX, moveY);
+  if (len > 0) {
+    moveX /= len; moveY /= len;
+    let currentSpeed = p.speed;
+    if (keys['shift'] && p.stamina > 5) {
+      currentSpeed *= 1.6;
+      p.stamina -= dt * 25;
+    } else {
+      if (p.stamina < p.maxStamina) p.stamina += dt * 12;
+    }
+
+    p.x += moveX * currentSpeed;
+    p.y += moveY * currentSpeed;
+
+    stepTimer += dt;
+    if (stepTimer > 0.38) {
+      playSound('step');
+      stepTimer = 0;
+    }
+  } else {
+    if (p.stamina < p.maxStamina) p.stamina += dt * 18;
+  }
+
+  // Расход фильтра маски
+  let maskObj = MASKS[p.mask];
+  let filterDrain = gameState.location === 'bunker' ? 1.8 : 0.6;
+  p.filter -= dt * filterDrain * (1 - gameState.bunkerUpgrade * 0.1);
+  if (p.filter <= 0) {
+    p.filter = 0;
+    p.hp -= dt * 12;
+    playSound('hit');
+  }
+
+  if (p.hp <= 0) {
+    alert('ВЫ ПОГИБЛИ В ЗОНЕ ОТЧУЖДЕНИЯ!');
+    p.hp = p.maxHp; p.filter = maskObj.maxFilter;
+    p.x = CITY.x; p.y = CITY.y;
+    gameState.location = 'city';
+    p.inventory = p.inventory.filter(i => ITEMS[i.id].type === 'consumable');
+  }
+
+  // Смена локаций Периметр <-> Город
+  let distCity = Math.hypot(p.x - CITY.x, p.y - CITY.y);
+  if (gameState.location !== 'bunker') {
+    if (distCity < CITY.r) {
+      if (gameState.location !== 'city') {
+        gameState.location = 'city';
+        showNotification('Вы вошли в Бамбуровку (Город)');
+      }
+    } else {
+      if (gameState.location !== 'field') {
+        gameState.location = 'field';
+        showNotification('Вы вышли в радиоактивный Периметр');
+      }
+    }
+  }
+
+  // Обновление врагов в поле
+  if (gameState.location === 'field') {
+    enemies.forEach(en => {
+      let d = Math.hypot(p.x - en.x, p.y - en.y);
+      if (d < en.range) {
+        en.x += (p.x - en.x) / d * en.speed;
+        en.y += (p.y - en.y) / d * en.speed;
+        if (d < 25) {
+          p.hp -= en.damage * dt;
+          playSound('hit');
+          createParticles(p.x, p.y, '#b32d2d', 2);
+        }
+      }
+    });
+    enemies = enemies.filter(en => en.hp > 0);
+  }
+
+  // Обновление частиц
+  particles.forEach(pt => {
+    pt.x += pt.vx; pt.y += pt.vy;
+    pt.life -= dt * 2;
+  });
+  particles = particles.filter(pt => pt.life > 0);
+
+  // Проверка триггеров взаимодействия
+  let actionBtn = $('action-btn');
+  let activeAction = null;
+
+  if (gameState.location === 'field') {
+    bunkers.forEach(b => {
+      if (Math.hypot(p.x - b.x, p.y - b.y) < 55) {
+        activeAction = { text: 'Войти в бункер', callback: () => enterBunker(b) };
+      }
+    });
+  } else if (gameState.location === 'city') {
+    if (Math.hypot(p.x - CITY.x, p.y - CITY.y) < 70) {
+      activeAction = { text: 'Торговец Сидорович', callback: openShop };
+    }
+    if (Math.hypot(p.x - (CITY.x - 140), p.y - CITY.y) < 60) {
+      activeAction = { text: 'Верстак и Убежище', callback: openBase };
+    }
+  } else if (gameState.location === 'bunker') {
+    if (Math.hypot(p.x - bunkerInterior.exit.x, p.y - bunkerInterior.exit.y) < 50) {
+      activeAction = { text: 'Выйти наружу', callback: exitBunker };
+    }
+    bunkerInterior.containers.forEach(c => {
+      if (!c.looted && Math.hypot(p.x - c.x, p.y - c.y) < 40) {
+        activeAction = { text: 'Обыскать ящик', callback: () => lootContainer(c) };
+      }
+    });
+    // Враги в бункере
+    bunkerInterior.enemies.forEach(en => {
+      let d = Math.hypot(p.x - en.x, p.y - en.y);
+      if (d < 300) {
+        en.x += (p.x - en.x) / d * 1.6;
+        en.y += (p.y - en.y) / d * 1.6;
+        if (d < 20) {
+          p.hp -= 15 * dt;
+          playSound('hit');
+        }
+      }
+    });
+  }
+
+  if (activeAction) {
+    actionBtn.innerText = activeAction.text;
+    actionBtn.style.display = 'block';
+    actionBtn.onclick = activeAction.callback;
+  } else {
+    actionBtn.style.display = 'none';
+  }
+
+  updateHUD();
+}
+
+function enterBunker(b) {
+  gameState.location = 'bunker';
+  gameState.currentBunker = b;
+  let p = gameState.player;
+  p.x = 400; p.y = 500;
+  bunkerInterior.exit = { x: 400, y: 550 };
+  
+  bunkerInterior.containers = [
+    { x: 250, y: 200, item: b.lootTable[Math.floor(Math.random() * b.lootTable.length)], looted: false },
+    { x: 550, y: 200, item: b.lootTable[Math.floor(Math.random() * b.lootTable.length)], looted: false }
+  ];
+  bunkerInterior.enemies = [];
+  if (b.tier > 1) {
+    bunkerInterior.enemies.push({ x: 400, y: 250, hp: 60 });
+  }
+  showNotification('Вы спустились в ' + b.name);
+  playSound('item');
+}
+
+function exitBunker() {
+  let b = gameState.currentBunker;
+  gameState.location = 'field';
+  let p = gameState.player;
+  p.x = b.x; p.y = b.y + 60;
+  showNotification('Вы вышли из бункера');
+  playSound('item');
+}
+
+function lootContainer(c) {
+  c.looted = true;
+  addItem(c.item, 1);
+  showNotification('Найдено: ' + ITEMS[c.item].name);
+  playSound('item');
+}
+
+function addItem(id, count) {
+  let item = gameState.player.inventory.find(i => i.id === id);
+  if (item) item.count += count;
+  else gameState.player.inventory.push({ id, count });
+}
+
+function useItem(id) {
+  let p = gameState.player;
+  let item = p.inventory.find(i => i.id === id);
+  if (!item || item.count <= 0) return;
+
+  if (id === 'filter') {
+    p.filter = MASKS[p.mask].maxFilter;
+    item.count--;
+    playSound('item');
+    showNotification('Фильтр заменен!');
+  } else if (id === 'medkit') {
+    p.hp = Math.min(p.maxHp, p.hp + 50);
+    item.count--;
+    playSound('item');
+    showNotification('Здоровье восстановлено!');
+  } else if (id === 'ammo') {
+    p.ammo += 30;
+    item.count--;
+    playSound('item');
+    showNotification('Магазин снаряжен!');
+  }
+  p.inventory = p.inventory.filter(i => i.count > 0);
+}
+
+function updateHUD() {
+  let p = gameState.player;
+  let mask = MASKS[p.mask];
+  $('hp-txt').innerText = `${Math.floor(p.hp)}/${p.maxHp}`;
+  $('hp-bar').style.width = `${(p.hp / p.maxHp) * 100}%`;
+  
+  $('filter-txt').innerText = `${Math.floor(p.filter)}/${mask.maxFilter}`;
+  $('filter-bar').style.width = `${(p.filter / mask.maxFilter) * 100}%`;
+  
+  $('stamina-bar').style.width = `${(p.stamina / p.maxStamina) * 100}%`;
+  $('money-txt').innerText = gameState.money;
+  $('ammo-txt').innerText = p.ammo;
+  $('mask-info').innerText = `Маска: ${mask.name}`;
+  $('loc-info').innerText = `Локация: ${gameState.location === 'city' ? 'Город' : gameState.location === 'field' ? 'Периметр' : 'Бункер'}`;
+
+  let invDiv = $('inventory-bar');
+  invDiv.innerHTML = '';
+  p.inventory.forEach(inv => {
+    let def = ITEMS[inv.id];
+    let clickable = def.type === 'consumable';
+    invDiv.innerHTML += `<div style="background: #15291a; border: 1px solid #3a6b43; padding: 4px 8px; border-radius: 4px; font-size: 11px; ${clickable ? 'cursor:pointer;' : ''}" ${clickable ? `onclick="useItem('${inv.id}')"` : ''}>${def.name} x${inv.count}</div>`;
+  });
+}
+
+// Окно торговли
+function openShop() {
+  let list = $('shop-list');
+  let html = '';
+  gameState.player.inventory.forEach(inv => {
+    let def = ITEMS[inv.id];
+    if (def.sell) {
+      html += `<div class="item-row"><span>${def.name} x${inv.count} (${def.sell}₽/шт)</span><button class="btn-small" onclick="sellItem('${inv.id}')">Продать</button></div>`;
+    }
+  });
+  html += `<h3 style="margin-top:15px; color:#4cd137;">Купить снаряжение</h3>`;
+  ['filter', 'medkit', 'ammo'].forEach(k => {
+    html += `<div class="item-row"><span>${ITEMS[k].name} (${ITEMS[k].price}₽)</span><button class="btn-small" onclick="buyItem('${k}')">Купить</button></div>`;
+  });
+  Object.keys(MASKS).forEach(mKey => {
+    if (gameState.player.mask !== mKey) {
+      html += `<div class="item-row"><span>${MASKS[mKey].name} (${MASKS[mKey].price}₽)</span><button class="btn-small" onclick="buyMask('${mKey}')">Купить</button></div>`;
+    }
+  });
+  list.innerHTML = html;
+  $('shop-modal').style.display = 'block';
+}
+
+function sellItem(id) {
+  let p = gameState.player;
+  let inv = p.inventory.find(i => i.id === id);
+  if (inv && inv.count > 0) {
+    inv.count--;
+    gameState.money += ITEMS[id].sell;
+    if (inv.count <= 0) p.inventory = p.inventory.filter(i => i.count > 0);
+    playSound('item');
+    openShop();
+  }
+}
+
+function buyItem(id) {
+  let def = ITEMS[id];
+  if (gameState.money >= def.price) {
+    gameState.money -= def.price;
+    addItem(id, 1);
+    playSound('item');
+    openShop();
+  } else {
+    showNotification('Недостаточно рублей!');
+  }
+}
+
+function buyMask(mKey) {
+  let m = MASKS[mKey];
+  if (gameState.money >= m.price) {
+    gameState.money -= m.price;
+    gameState.player.mask = mKey;
+    gameState.player.filter = m.maxFilter;
+    playSound('item');
+    openShop();
+    showNotification('Приобретена новая защита!');
+  } else {
+    showNotification('Не хватает средств!');
+  }
+}
+
+// Убежище
+function openBase() {
+  let list = $('base-list');
+  let upgradeCost = (gameState.bunkerUpgrade + 1) * 600;
+  list.innerHTML = `
+    <div style="font-size: 13px; margin-bottom: 15px;">Уровень вентиляции убежища: <b>${gameState.bunkerUpgrade}</b></div>
+    <button class="btn-small" onclick="upgradeBase()">Улучшить систему очистки (${upgradeCost}₽)</button>
+  `;
+  $('base-modal').style.display = 'block';
+}
+
+function upgradeBase() {
+  let cost = (gameState.bunkerUpgrade + 1) * 600;
+  if (gameState.money >= cost) {
+    gameState.money -= cost;
+    gameState.bunkerUpgrade++;
+    playSound('item');
+    showNotification('Убежище улучшено!');
+    openBase();
+  } else {
+    showNotification('Недостаточно средств для апгрейда!');
+  }
+}
+
+function closeModals() {
+  $('shop-modal').style.display = 'none';
+  $('base-modal').style.display = 'none';
+}
+
+// Рендеринг графики
+function render() {
+  ctx.clearRect(0, 0, W, H);
+  let p = gameState.player;
+
+  ctx.save();
+  ctx.translate(W / 2 - p.x, H / 2 - p.y);
+
+  if (gameState.location !== 'bunker') {
+    // Рендер открытого мира (Лес / Периметр)
+    ctx.fillStyle = '#0b1c0e';
+    ctx.fillRect(0, 0, MAP_SIZE, MAP_SIZE);
+
+    // Текстурные процедурные детали сетки мира
+    ctx.strokeStyle = '#122615';
+    ctx.lineWidth = 2;
+    for (let x = 0; x < MAP_SIZE; x += 300) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, MAP_SIZE); ctx.stroke();
+    }
+    for (let y = 0; y < MAP_SIZE; y += 300) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(MAP_SIZE, y); ctx.stroke();
+    }
+
+    // Деревья и аномалии
+    for (let i = 200; i < MAP_SIZE; i += 400) {
+      for (let j = 200; j < MAP_SIZE; j += 400) {
+        ctx.fillStyle = '#143819';
+        ctx.beginPath(); ctx.arc(i, j, 45, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#1e5226';
+        ctx.beginPath(); ctx.arc(i - 8, j - 8, 25, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    // Зона города
+    ctx.fillStyle = '#1b3822';
+    ctx.beginPath(); ctx.arc(CITY.x, CITY.y, CITY.r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#3a7a46'; ctx.lineWidth = 4; ctx.stroke();
+
+    // Здания в городе
+    ctx.fillStyle = '#2c4a33';
+    ctx.fillRect(CITY.x - 70, CITY.y - 70, 140, 140);
+    ctx.fillStyle = '#ffd700';
+    ctx.font = 'bold 14px monospace';
+    ctx.fillText('СИДОРОВИЧ', CITY.x - 50, CITY.y - 80);
+
+    ctx.fillStyle = '#263b4a';
+    ctx.fillRect(CITY.x - 180, CITY.y - 40, 80, 80);
+    ctx.fillStyle = '#74b9ff';
+    ctx.fillText('УБЕЖИЩЕ', CITY.x - 170, CITY.y - 50);
+
+    // Бункеры на карте
+    bunkers.forEach(b => {
+      ctx.fillStyle = '#4a382c';
+      ctx.fillRect(b.x - 25, b.y - 25, 50, 50);
+      ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 2; ctx.strokeRect(b.x - 25, b.y - 25, 50, 50);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(b.name, b.x - 40, b.y - 32);
+    });
+
+    // Враги
+    enemies.forEach(en => {
+      ctx.fillStyle = '#c0392b';
+      ctx.beginPath(); ctx.arc(en.x, en.y, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#000';
+      ctx.fillRect(en.x - 10, en.y - 22, 20, 4);
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillRect(en.x - 10, en.y - 22, 20 * (en.hp / 50), 4);
+    });
+
+  } else {
+    // Рендер интерьера бункера
+    ctx.fillStyle = '#111311';
+    ctx.fillRect(100, 80, 600, 520);
+    ctx.strokeStyle = '#3a4a3a'; ctx.lineWidth = 6;
+    ctx.strokeRect(100, 80, 600, 520);
+
+    // Выход
+    ctx.fillStyle = '#c0392b';
+    ctx.fillRect(bunkerInterior.exit.x - 20, bunkerInterior.exit.y - 20, 40, 40);
+
+    // Контейнеры лута
+    bunkerInterior.containers.forEach(c => {
+      ctx.fillStyle = c.looted ? '#333' : '#d4ac0d';
+      ctx.fillRect(c.x - 16, c.y - 16, 32, 32);
+    });
+
+    // Враги в бункере
+    bunkerInterior.enemies.forEach(en => {
+      ctx.fillStyle = '#8e44ad';
+      ctx.beginPath(); ctx.arc(en.x, en.y, 14, 0, Math.PI * 2); ctx.fill();
+    });
+  }
+
+  // Отрисовка игрока (детальная модель)
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  // Тело в плаще
+  ctx.fillStyle = '#2c3e50';
+  ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2); ctx.fill();
+  // Противогаз / шлем
+  ctx.fillStyle = '#7f8c8d';
+  ctx.beginPath(); ctx.arc(0, -4, 10, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#111';
+  ctx.fillRect(-4, -6, 8, 4);
+  ctx.restore();
+
+  // Частицы
+  particles.forEach(pt => {
+    ctx.fillStyle = pt.color;
+    ctx.beginPath(); ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2); ctx.fill();
+  });
+
+  ctx.restore();
+
+  // Виньетка и маска тумана
+  let maskDef = MASKS[p.mask];
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, 0, W, H);
+  ctx.arc(W / 2, H / 2, maskDef.vision, 0, Math.PI * 2, true);
+  ctx.clip();
+  ctx.fillStyle = 'rgba(2, 5, 3, 0.97)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  // Ободок маски
+  ctx.strokeStyle = '#1b301e';
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.arc(W / 2, H / 2, maskDef.vision, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Стрелка компаса на город/цель
+  if (gameState.location === 'field') {
+    let angle = Math.atan2(CITY.y - p.y, CITY.x - p.x);
+    let dist = Math.hypot(CITY.x - p.x, CITY.y - p.y);
+    if (dist > W * 0.4) {
+      ctx.save();
+      ctx.translate(W / 2 + Math.cos(angle) * (W * 0.38), H / 2 + Math.sin(angle) * (H * 0.38));
+      ctx.rotate(angle);
+      ctx.fillStyle = '#f1c40f';
+      ctx.beginPath(); ctx.moveTo(12, 0); ctx.lineTo(-8, -6); ctx.lineTo(-8, 6); ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
